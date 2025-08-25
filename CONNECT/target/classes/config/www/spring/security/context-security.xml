@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans 
+	xmlns="http://www.springframework.org/schema/security"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+			http://www.springframework.org/schema/beans/spring-beans-3.2.xsd
+			http://www.springframework.org/schema/security
+			http://www.springframework.org/schema/security/spring-security.xsd">
+
+	<http pattern="/**/*.css" 			security="none"/>
+	<http pattern="/**/*.js" 			security="none"/>
+
+	<!-- 기본적인 설정들은  custom-filter ref="usernamePasswordAuthenticationFilter" 참조 바람-->
+	<http auto-config="true" 
+			access-decision-manager-ref="accessDecisionManager"
+			authentication-manager-ref="authenticationManager">
+			
+		<form-login login-page="/mba/auth/login" />
+		<logout invalidate-session="true"
+			logout-url="/mba/auth/logout"
+			success-handler-ref="logoutSuccessHandler"/>
+		<custom-filter ref="usernamePasswordAuthenticationFilter" before="FORM_LOGIN_FILTER"/>
+		<custom-filter ref="filterSecurityInterceptor" before="FILTER_SECURITY_INTERCEPTOR"/>
+	</http>
+	 
+	<!--
+		인증이 필요한 경로 설정(기본 ant 패턴을 사용한다.) 
+		
+		intercept-url pattern : 인증이 필요한 경로 (ant패턴)
+		intercept-url access : 허가할 권한값
+	 -->
+	<filter-security-metadata-source id="filterSecurityMetadataSource" use-expressions="true">
+		<intercept-url pattern="/mpg/**/*" access="hasRole('EXTERNAL_AUTH')"/>  	
+<!-- 		<intercept-url pattern="/mba/auth/join" access="hasRole('EXTERNAL_AUTH')"/> -->
+<!-- 		<intercept-url pattern="/mwn/board/*/U/**/*" access="hasRole('EXTERNAL_AUTH')"/>
+		<intercept-url pattern="/mwn/board/*/PL/**/*" access="hasRole('EXTERNAL_AUTH')"/>
+		<intercept-url pattern="/mwn/board/delMwnBoard*" access="hasRole('EXTERNAL_AUTH')"/>
+		<intercept-url pattern="/brd/board/**/C/menu/**" access="hasRole('EXTERNAL_AUTH')"/>
+		<intercept-url pattern="/brd/board/**/C/**/menu/**" access="hasRole('EXTERNAL_AUTH')"/>
+		<intercept-url pattern="/brd/board/**/MY/menu/**" access="hasRole('EXTERNAL_AUTH')"/>
+		<intercept-url pattern="/member/mypage/**" access="hasRole('EXTERNAL_AUTH')"/>
+		<intercept-url pattern="/product/search/form/menu/**" access="hasRole('EXTERNAL_AUTH')"/>
+		<intercept-url pattern="/product/search/purchase/form/menu/**" access="hasRole('EXTERNAL_AUTH')"/>
+		<intercept-url pattern="/product/wishlist/add/menu/**" access="hasRole('EXTERNAL_AUTH')"/>
+		<intercept-url pattern="/product/wishlist/add/menu/**" access="hasRole('EXTERNAL_AUTH')"/>
+		<intercept-url pattern="/business/apply/**/menu/**" access="hasRole('EXTERNAL_AUTH')"/>
+		<intercept-url pattern="/voucherboard/add/menu/**" access="hasRole('EXTERNAL_AUTH')"/>      
+		<intercept-url pattern="/support/report/unfair/1/form/menu/**" access="hasRole('EXTERNAL_AUTH')"/> -->
+	</filter-security-metadata-source> 
+	 
+	<!--
+		권한 계층. ">" 에 따라 부모, 자식으로 권한 계층이 이루어 진다. 상위로 갈수록 하위 권한을 가지게 됨.
+		
+		 MEMBER : 회원
+		 NAMECHECK : 실명(휴대폰)인증
+		 IPIN : IPIN인증
+		 EXTERNAL_AUTH : 외부 인증 (휴대폰, IPIN) 
+	 -->
+	<beans:bean id="roleHierarchy" 
+			class="org.springframework.security.access.hierarchicalroles.RoleHierarchyImpl" >
+		<beans:property name="hierarchy">
+			<beans:value>
+				MEMBER > NAMECHECK
+				MEMBER > IPIN
+				MEMBER > SNS
+				SNS > EXTERNAL_AUTH
+				NAMECHECK > EXTERNAL_AUTH  
+				IPIN > EXTERNAL_AUTH
+			</beans:value>
+		</beans:property>
+	</beans:bean>
+
+	<!--
+		인증 처리 제공자 
+	 -->
+	<beans:bean id="webAuthenticationProvider" class="www.com.security.provider.WebAuthenticationProvider"/>
+	
+	<!--
+		 사용자의 크리덴셜을 검증하고, (인증 실패 시) 특정 예외를 던지거나 (인증 성공 시) 권한 정보와 같은 내용을
+		 포함해 Authentication객체를 완전히 채우는 역활을 한다.
+	 -->	
+	<authentication-manager id="authenticationManager">
+		<authentication-provider ref="webAuthenticationProvider"/>
+	</authentication-manager>
+
+
+	<!--
+		접근 결정 관리자 
+		AffirmativeBased : Voter가 접근을 승인 하면 이전에 거부된 내용과 상관없이 접근이 곧바로 승인됨.
+	 -->
+	<beans:bean id="accessDecisionManager" class="org.springframework.security.access.vote.AffirmativeBased">
+        <beans:constructor-arg>
+            <beans:list>
+            	<!-- 
+            		SpEL 방식 예) access="hasRole('...')", access="permitAll" 등 으로 intercept-url access 권한을 줄수 있게 WebExpressionVoter 사용
+            		filter-security-metadata-source element에 use-expressions="true" attribute값이 있어야 사용가능함. 
+            	-->
+            	<beans:bean class="org.springframework.security.web.access.expression.WebExpressionVoter">
+            		<beans:property name="expressionHandler">
+            			<beans:bean class="org.springframework.security.web.access.expression.DefaultWebSecurityExpressionHandler">
+            				<beans:property name="roleHierarchy" ref="roleHierarchy"/>
+            			</beans:bean>
+            		</beans:property>
+            	</beans:bean>
+            	
+            	<!-- 
+            		계층형 access 권한을 주기위한 RoleHierarchyVoter.  예) access="ROLE_USER,ROLE_ADMIN" 
+            		filter-security-metadata-source element에 use-expressions="false" attribute값이거나 없어야 사용가능함.  
+            	-->
+                <beans:bean class="org.springframework.security.access.vote.RoleHierarchyVoter">
+                	<beans:constructor-arg ref="roleHierarchy"/>
+                    <beans:property name="rolePrefix" value=""/>
+                </beans:bean>
+                <beans:bean class="org.springframework.security.access.vote.AuthenticatedVoter"/>
+            </beans:list>
+        </beans:constructor-arg>
+    </beans:bean>
+
+	<!--
+		 회원 및 휴대폰, IPIN 인증 체크 filter
+	 -->
+	<beans:bean id="usernamePasswordAuthenticationFilter" class="org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter">
+		<!-- <beans:property name="usernameParameter"/>
+		<beans:property name="passwordParameter"/> -->
+		<beans:property name="filterProcessesUrl" value="/com/auth/login"/>
+		<beans:property name="postOnly" value="false"/>
+		<beans:property name="authenticationManager" ref="authenticationManager"/>
+		<beans:property name="authenticationSuccessHandler" ref="loginSuccessHandler"/>
+		<beans:property name="authenticationFailureHandler" ref="loginFailureHandler"/>
+	</beans:bean>
+	
+	<!--
+		사용자 인증 여부 체크 filter 
+	 -->
+	<beans:bean id="filterSecurityInterceptor" class="org.springframework.security.web.access.intercept.FilterSecurityInterceptor">
+        <beans:property name="accessDecisionManager" ref="accessDecisionManager" />
+        <beans:property name="authenticationManager" ref="authenticationManager"/>
+        <beans:property name="securityMetadataSource" ref="filterSecurityMetadataSource"/>
+    </beans:bean>
+
+	<!-- 
+		로그인/로그아웃 성공시 호출되는 Handler
+	 -->
+	 <beans:bean id="loginSuccessHandler" class="www.com.security.handler.LoginSuccessHandler">
+	 	<beans:property name="defaultTargetUrl" value="/"/>
+	 </beans:bean>
+	 <beans:bean id="loginFailureHandler" class="www.com.security.handler.LoginFailureHandler"></beans:bean>
+	 <beans:bean id="logoutSuccessHandler" class="org.springframework.security.web.authentication.logout.SimpleUrlLogoutSuccessHandler">
+	 	<beans:property name="targetUrlParameter" value="retUrl"/>
+	 	<beans:property name="defaultTargetUrl" value="/"/>
+	 </beans:bean>
+
+</beans:beans> 

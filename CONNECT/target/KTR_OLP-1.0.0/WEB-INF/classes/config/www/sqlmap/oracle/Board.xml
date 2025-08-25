@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+  이 파일은 JavaGen이 치환하는 템플릿입니다.
+  - 패키지/모듈 경로: "www.api.bbs.board" → JavaGen이 동적 패키지로 치환
+  - 네임스페이스 접미사: "Board" → JavaGen이 service_name(예: Board, RankingGrp)으로 치환
+  - SQL 내부 토큰:
+      board           : 실제 테이블명
+      ID
+         : SELECT 컬럼 목록
+            : INSERT 컬럼 목록
+                : INSERT VALUES 바인딩
+          : UPDATE SET 절 (동적 <if>)
+      ID        : PK 컬럼명 (대문자)
+      #{id}         : #{pkField} 바인딩 (카멜케이스)
+  - parameter/result 타입: 모두 HashMap 기반 (MyBatis alias "hashmap")
+-->
+
+<mapper namespace="www.api.bbs.board.Board">
+
+    <sql id="whereBoard">
+        <!-- 
+        동적 검색 조건 템플릿 (필요 시 활성화)
+
+        <choose>
+            <when test='id != null and id != "" '>
+
+            </when>
+            <otherwise>
+
+            </otherwise>
+        </choose>
+
+        <if test="searchField != null and searchText != null and searchField != '' and searchText != ''">
+            <choose>
+                <when test='searchField == "title"'>
+                    AND TITLE LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "content"'>
+                    AND CONTENT LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "writer"'>
+                    AND WRITER LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        -->
+    </sql> 
+
+    <select id="selectBoardList" parameterType="hashmap" resultType="hashmap">
+        /*
+         SQL ID: www.api.bbs.board.Board.selectBoardList
+         Description : 목록 Query 
+        */
+        SELECT
+            ID
+
+        FROM board
+        <where>
+            <include refid="whereBoard" />
+        </where>
+        ORDER BY ID DESC
+        <if test="limit != null and offset != null">
+            /*  페이징 하단 시작  */
+            LIMIT #{limit} OFFSET #{offset}
+            /*  페이징 하단 끝  */
+        </if>
+    </select>
+
+    <select id="selectBoardListCount" parameterType="hashmap" resultType="int">
+        /*
+         SQL ID: www.api.bbs.board.Board.selectBoardListCount
+         Description : 목록에서 레코드수 Query 
+        */
+        SELECT
+            COUNT(*) CNT
+        FROM board
+        <where>
+            <include refid="whereBoard" />
+        </where> 
+    </select>
+
+    <select id="selectBoardDetail" parameterType="hashmap" resultType="hashmap">
+        /*
+         SQL ID: www.api.bbs.board.Board.selectBoardDetail
+         Description : 상세조회 Query 
+        */ 
+        SELECT
+            ID
+
+        FROM board
+        WHERE ID = #{id}
+    </select>
+
+    <insert id="insertBoard" parameterType="hashmap">
+        /*
+         SQL ID: www.api.bbs.board.Board.insertBoard
+         Description : 등록 Query 
+        */
+        INSERT INTO board
+        (
+            
+        )
+        VALUES
+        (
+            
+        )
+    </insert>
+
+    <update id="updateBoard" parameterType="hashmap">
+        /*
+         SQL ID: www.api.bbs.board.Board.updateBoard
+         Description : 수정 Query 
+        */
+        UPDATE board
+        <set>
+            
+        </set>
+        WHERE ID = #{id}
+    </update>
+
+    <update id="orderBoard" parameterType="hashmap">
+        /*
+         SQL ID: www.api.bbs.board.Board.orderBoard
+         Description : 정렬 순서 수정
+        */
+        UPDATE board SET
+            ORDERS = #{orders}
+        WHERE ID = #{id}
+    </update>
+
+    <delete id="deleteBoard" parameterType="hashmap">
+        /*
+         SQL ID: www.api.bbs.board.Board.deleteBoard
+         Description : 삭제 Query 
+        */
+        DELETE FROM board
+        WHERE ID = #{id}
+    </delete>
+
+</mapper>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.mba.auth.Auth">
+	
+	<insert id="insertMember" parameterType="map">
+	/* www.api.mba.auth.Auth.insertMember */
+		INSERT INTO
+		MEMBER
+		(
+            ID
+			,PASSWORD
+			,NAME
+			,EMAIL
+			,PHONE
+			,TYPE
+			,GRADE
+			,CREATE_USER
+			,CREATE_DATE
+			,UPDATE_USER
+			,UPDATE_DATE
+
+		)
+		VALUES
+		(
+			#{id}
+			,#{password}
+			,#{name}
+			,#{email}
+			,#{phone}
+			,#{type}
+			,#{grade}
+			,#{createUser}
+			,now()
+			,#{updateUser}
+			,now()
+
+		)
+	</insert>
+
+    <!-- 로그인 -->
+    <select id="selectLogin" parameterType="map" resultType="CamelHashMap">
+    /* www.api.mba.auth.Auth.selectLogin */
+		SELECT ID
+		      ,PASSWORD
+        FROM MEMBER
+        WHERE ID = #{id}
+        AND PASSWORD = #{password}
+    </select>
+
+
+</mapper>
