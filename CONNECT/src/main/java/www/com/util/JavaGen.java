@@ -51,7 +51,7 @@ public class JavaGen {
     
     private static String service_name = "Board";     // 모듈명(클래스 접두) : 대문자 시작 (예: Board, RankingGrp)
     private static String unitBizName  = "basic";
-    private static String NaDa         = "정지균";
+    private static String NaDa         = "정지균";	
     private static String screenTitle  = "게시판";
     private static String functionDesc = "CRUD";
 
@@ -329,6 +329,7 @@ public class JavaGen {
             String svcLower = toLowerCamel(service_name);
             String outList  = targetDir + svcLower + "List.jsp";
             String outMod   = targetDir + svcLower + "Modify.jsp";
+            String outMain   = targetDir + svcLower + ".jsp";
 
             // 치환 값
             String svcUpper = service_name;                // Template → Board
@@ -371,6 +372,26 @@ public class JavaGen {
                     s = s.replace("screenTitle", title);
                     fn.writeText(outMod, s);
                     System.out.println("생성: " + outMod);
+                }
+            }
+            
+            // === 통합 페이지: template.jsp (한 화면 입력/삭제) ===
+            String tplUnified = tplList.replace("TemplateList.jsp", "Template.jsp"); // /smp/sample/Template.jsp
+
+            if (!fn.fileExists(tplUnified)) {
+                System.out.println("JSP 템플릿 없음: " + tplUnified);
+            } else {
+                if (!JSP_OVERWRITE && fn.fileExists(outMain)) {
+                    System.out.println(outMain + " 이미 존재. 생성 생략");
+                } else {
+                    String s = fn.readText(tplUnified);
+                    s = s.replace("BIZ_SEG", bizSeg);
+                    s = s.replace("Template",  svcUpper);
+                    s = s.replace("template",  svcLower);
+                    s = s.replace("PK_PARAM",  pkParam);
+                    s = s.replace("screenTitle", title);
+                    fn.writeText(outMain, s);
+                    System.out.println("생성: " + outMain);
                 }
             }
         } catch (Exception e) {

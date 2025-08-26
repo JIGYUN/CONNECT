@@ -79,9 +79,9 @@
 	    </div>      
         <div class="row" style="padding:5px;">
 	  	    <div class="col-md-12">
-                <button class="btn btn-primary w-100 py-2" type="button" onClick="goLink('/mba/auth/join')">회원가입</button>
+                <button class="btn btn-primary w-100 py-2" type="button" onClick="goLink('/mba/auth/companyDocJoin')">회원가입</button>
             </div>
-	    </div>
+	    </div>  
         <div class="row" style="padding:5px;"> 
 	  	    <div class="col-md-12">
                 <button class="btn btn-primary w-100 py-2" type="button" onClick="goLink('/mba/auth/idFind')">아이디 찾기</button>

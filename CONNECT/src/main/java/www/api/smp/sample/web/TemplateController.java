@@ -36,9 +36,6 @@ public class TemplateController {
     @RequestMapping("/api/bbs/template/selectTemplateDetail")
     @ResponseBody
     public Map<String, Object> selectTemplateDetail(@RequestBody HashMap<String, Object> map) throws Exception {
-        if (UserSessionManager.isUserLogined()) {   	
-        	map.put("createUser", UserSessionManager.getLoginUserVO().getMberNo());
-        }
         Map<String, Object> resultMap = new HashMap<>();
         Map<String, Object> result = templateService.selectTemplateDetail(map);
         resultMap.put("msg", "성공");
@@ -52,6 +49,9 @@ public class TemplateController {
     @RequestMapping("/api/bbs/template/insertTemplate")
     @ResponseBody
     public Map<String, Object> insertTemplate(@RequestBody HashMap<String, Object> map) throws Exception {
+        if (UserSessionManager.isUserLogined()) {   	
+        	map.put("createUser", UserSessionManager.getLoginUserVO().getMberNo());
+        }
         Map<String, Object> resultMap = new HashMap<>();
         templateService.insertTemplate(map);
         resultMap.put("msg", "등록 성공");
@@ -64,6 +64,9 @@ public class TemplateController {
     @RequestMapping("/api/bbs/template/updateTemplate")
     @ResponseBody
     public Map<String, Object> updateTemplate(@RequestBody HashMap<String, Object> map) throws Exception {
+        if (UserSessionManager.isUserLogined()) {   	
+        	map.put("updateUser", UserSessionManager.getLoginUserVO().getMberNo());
+        }
         Map<String, Object> resultMap = new HashMap<>();
         templateService.updateTemplate(map);
         resultMap.put("msg", "수정 성공");

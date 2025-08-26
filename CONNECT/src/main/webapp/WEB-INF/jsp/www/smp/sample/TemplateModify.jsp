@@ -19,9 +19,6 @@
         <label>내용</label><br/>
         <textarea name="content" id="content" rows="10" cols="80"></textarea><br/><br/>
 
-        <label>작성자</label><br/>
-        <input type="text" name="createUser" id="createUser" /><br/><br/>
-
         <button type="button" onclick="saveTemplate()">저장</button>
         <button type="button" onclick="deleteTemplate()">삭제</button>
         <button type="button" onclick="goLink('/BIZ_SEG/template/templateList')">목록</button>

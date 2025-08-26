@@ -36,9 +36,6 @@ public class BoardController {
     @RequestMapping("/api/bbs/board/selectBoardDetail")
     @ResponseBody
     public Map<String, Object> selectBoardDetail(@RequestBody HashMap<String, Object> map) throws Exception {
-        if (UserSessionManager.isUserLogined()) {   	
-        	map.put("createUser", UserSessionManager.getLoginUserVO().getMberNo());
-        }
         Map<String, Object> resultMap = new HashMap<>();
         Map<String, Object> result = boardService.selectBoardDetail(map);
         resultMap.put("msg", "성공");
@@ -52,6 +49,9 @@ public class BoardController {
     @RequestMapping("/api/bbs/board/insertBoard")
     @ResponseBody
     public Map<String, Object> insertBoard(@RequestBody HashMap<String, Object> map) throws Exception {
+        if (UserSessionManager.isUserLogined()) {   	
+        	map.put("createUser", UserSessionManager.getLoginUserVO().getMberNo());
+        }
         Map<String, Object> resultMap = new HashMap<>();
         boardService.insertBoard(map);
         resultMap.put("msg", "등록 성공");
@@ -64,6 +64,9 @@ public class BoardController {
     @RequestMapping("/api/bbs/board/updateBoard")
     @ResponseBody
     public Map<String, Object> updateBoard(@RequestBody HashMap<String, Object> map) throws Exception {
+        if (UserSessionManager.isUserLogined()) {   	
+        	map.put("updateUser", UserSessionManager.getLoginUserVO().getMberNo());
+        }
         Map<String, Object> resultMap = new HashMap<>();
         boardService.updateBoard(map);
         resultMap.put("msg", "수정 성공");

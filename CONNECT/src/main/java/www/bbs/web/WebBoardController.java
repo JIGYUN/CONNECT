@@ -21,6 +21,18 @@ public class WebBoardController {
 	/**
 	 * 게시판 목록 화면 호출
 	 */
+	@RequestMapping(value = "/board/board")
+	public String getBoard(ModelMap model, @RequestParam HashMap<String, Object> map) throws Exception {
+		if (UserSessionManager.isUserLogined()) {
+			model.put("userVO", UserSessionManager.getLoginUserVO());
+		}
+		model.put("map", map);
+		return "bbs/board/board";
+	}
+	
+	/**
+	 * 게시판 목록 화면 호출
+	 */
 	@RequestMapping(value = "/board/boardList")
 	public String getBoardListPage(ModelMap model, @RequestParam HashMap<String, Object> map) throws Exception {
 		if (UserSessionManager.isUserLogined()) {
@@ -29,7 +41,7 @@ public class WebBoardController {
 		model.put("map", map);
 		return "bbs/board/boardList";
 	}
-
+	
 	/**
 	 * 게시판 등록/수정 화면 호출
 	 */
