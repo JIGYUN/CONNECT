@@ -133,7 +133,7 @@
         */
         UPDATE board
         <set>
-            <if test='boardGrpIdx != null and boardGrpIdx != ""'>
+            			<if test='boardGrpIdx != null and boardGrpIdx != ""'>
 				BOARD_GRP_IDX = #{boardGrpIdx},
 			</if>
 			<if test='type != null and type != ""'>

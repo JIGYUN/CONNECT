@@ -10,47 +10,41 @@ import java.util.HashMap;
 
 /**
  * @ClassName   : WebBoardController.java
- * @Description : 게시판 화면 호출 컨트롤러 (List, Modify)
- * @author 정지균
- * @since 2025.08.20
+ * @Description : 게시판 화면(Web) : 게시판 위한 클래스로 CRUD에 대한 컨트롤을 관리한다.
+ * @author      : 정지균
+ * @since       : 2025. 08. 28.
  */
 @Controller
-@RequestMapping("/bbs")
+@RequestMapping("/bbs") // 예) /bbs
 public class WebBoardController {
 
-	/**
-	 * 게시판 목록 화면 호출
-	 */
-	@RequestMapping(value = "/board/board")
-	public String getBoard(ModelMap model, @RequestParam HashMap<String, Object> map) throws Exception {
-		if (UserSessionManager.isUserLogined()) {
-			model.put("userVO", UserSessionManager.getLoginUserVO());
-		}
-		model.put("map", map);
-		return "bbs/board/board";
-	}
-	
-	/**
-	 * 게시판 목록 화면 호출
-	 */
-	@RequestMapping(value = "/board/boardList")
-	public String getBoardListPage(ModelMap model, @RequestParam HashMap<String, Object> map) throws Exception {
-		if (UserSessionManager.isUserLogined()) {
-			model.put("userVO", UserSessionManager.getLoginUserVO());
-		}
-		model.put("map", map);
-		return "bbs/board/boardList";
-	}
-	
-	/**
-	 * 게시판 등록/수정 화면 호출
-	 */
-	@RequestMapping(value = "/board/boardModify")
-	public String getBoardModifyPage(ModelMap model, @RequestParam HashMap<String, Object> map) throws Exception {
-		if (UserSessionManager.isUserLogined()) {
-			model.put("userVO", UserSessionManager.getLoginUserVO());
-		}
-		model.put("map", map);
-		return "bbs/board/boardModify";
-	}
+    /** 기본 페이지 */
+    @RequestMapping("/board/board")
+    public String page(ModelMap model, @RequestParam HashMap<String,Object> map) throws Exception {
+        if (UserSessionManager.isUserLogined()) {
+            model.put("userVO", UserSessionManager.getLoginUserVO());
+        }
+        model.put("map", map);
+        return "bbs/board/board"; // 예) bbs/board/board.jsp
+    }
+
+    /** 목록 페이지 */
+    @RequestMapping("/board/boardList")
+    public String list(ModelMap model, @RequestParam HashMap<String,Object> map) throws Exception {
+        if (UserSessionManager.isUserLogined()) {
+            model.put("userVO", UserSessionManager.getLoginUserVO());
+        }
+        model.put("map", map);
+        return "bbs/board/boardList"; // 예) bbs/board/boardList.jsp
+    }
+
+    /** 등록/수정 페이지 */
+    @RequestMapping("/board/boardModify")
+    public String modify(ModelMap model, @RequestParam HashMap<String,Object> map) throws Exception {
+        if (UserSessionManager.isUserLogined()) {
+            model.put("userVO", UserSessionManager.getLoginUserVO());
+        }
+        model.put("map", map);
+        return "bbs/board/boardModify"; // 예) bbs/board/boardModify.jsp
+    }
 }

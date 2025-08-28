@@ -19,9 +19,6 @@
         <label>내용</label><br/>
         <textarea name="content" id="content" rows="10" cols="80"></textarea><br/><br/>
 
-        <label>작성자</label><br/>
-        <input type="text" name="createUser" id="createUser" /><br/><br/>
-
         <button type="button" onclick="saveBoard()">저장</button>
         <button type="button" onclick="deleteBoard()">삭제</button>
         <button type="button" onclick="goLink('/bbs/board/boardList')">목록</button>

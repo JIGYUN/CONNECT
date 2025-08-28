@@ -20,7 +20,7 @@ public class TemplateController {
     /**
      * 게시판 목록 조회
      */
-    @RequestMapping("/api/bbs/template/selectTemplateList")
+    @RequestMapping("/api/BIZ_SEG/template/selectTemplateList")
     @ResponseBody
     public Map<String, Object> selectTemplateList(@RequestBody HashMap<String, Object> map) throws Exception {
         Map<String, Object> resultMap = new HashMap<>();
@@ -33,7 +33,7 @@ public class TemplateController {
     /**
      * 게시판 단건 조회
      */
-    @RequestMapping("/api/bbs/template/selectTemplateDetail")
+    @RequestMapping("/api/BIZ_SEG/template/selectTemplateDetail")
     @ResponseBody
     public Map<String, Object> selectTemplateDetail(@RequestBody HashMap<String, Object> map) throws Exception {
         Map<String, Object> resultMap = new HashMap<>();
@@ -46,7 +46,7 @@ public class TemplateController {
     /**
      * 게시글 등록
      */
-    @RequestMapping("/api/bbs/template/insertTemplate")
+    @RequestMapping("/api/BIZ_SEG/template/insertTemplate")
     @ResponseBody
     public Map<String, Object> insertTemplate(@RequestBody HashMap<String, Object> map) throws Exception {
         if (UserSessionManager.isUserLogined()) {   	
@@ -61,7 +61,7 @@ public class TemplateController {
     /**
      * 게시글 수정
      */
-    @RequestMapping("/api/bbs/template/updateTemplate")
+    @RequestMapping("/api/BIZ_SEG/template/updateTemplate")
     @ResponseBody
     public Map<String, Object> updateTemplate(@RequestBody HashMap<String, Object> map) throws Exception {
         if (UserSessionManager.isUserLogined()) {   	
@@ -76,7 +76,7 @@ public class TemplateController {
     /**
      * 게시글 삭제
      */
-    @RequestMapping("/api/bbs/template/deleteTemplate")
+    @RequestMapping("/api/BIZ_SEG/template/deleteTemplate")
     @ResponseBody
     public Map<String, Object> deleteTemplate(@RequestBody HashMap<String, Object> map) throws Exception {
         Map<String, Object> resultMap = new HashMap<>();
@@ -88,7 +88,7 @@ public class TemplateController {
     /**
      * 게시글 개수
      */
-    @RequestMapping("/api/bbs/template/selectTemplateListCount")
+    @RequestMapping("/api/BIZ_SEG/template/selectTemplateListCount")
     @ResponseBody
     public Map<String, Object> selectTemplateListCount(@RequestBody HashMap<String, Object> map) throws Exception {
         Map<String, Object> resultMap = new HashMap<>();

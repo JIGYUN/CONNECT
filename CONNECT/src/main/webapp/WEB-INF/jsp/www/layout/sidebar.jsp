@@ -27,10 +27,8 @@
         <div class="collapse navbar-collapse" id="navbarsExample09">
             <ul class="navbar-nav mr-auto" id="topBar">
                 <li class="nav-item" id="schedule"><a class="nav-link" href="/bbs/board/boardList">게시판</a></li>
-                <li class="nav-item" id="household"><a class="nav-link" href="/mpg/mypage/companyMemberApprove">기업요청 관리</a></li>
-                <li class="nav-item" id="reminder"><a class="nav-link" href="/mpg/mypage/companyModify">기업정보 관리</a></li>
-                <li class="nav-item" id="place"><a class="nav-link" href="/mpg/mypage/companyMemberSpecify">기업 담당자 관리</a></li> 
-            </ul>     
+                <li class="nav-item" id="schedule"><a class="nav-link" href="/hhd/household/householdList">가게부</a></li>
+            </ul>
         </div>
     </nav>
 </div>

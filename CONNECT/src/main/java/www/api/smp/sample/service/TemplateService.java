@@ -12,7 +12,7 @@ import www.com.util.CommonDao;
 @Service
 public class TemplateService {
 
-    private final String namespace = "www.api.bbs.template.Template";
+    private final String namespace = "www.api.BIZ_SEG.template.Template";
 
     @Autowired
     private CommonDao dao;

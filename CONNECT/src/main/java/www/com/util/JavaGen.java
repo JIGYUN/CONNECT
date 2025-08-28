@@ -34,6 +34,15 @@ public class JavaGen {
     private static final boolean GEN_JSP        = true;
     private static final boolean JSP_OVERWRITE  = false; // true로 바꾸면 기존 파일 덮어씀
 
+ // === JSP 연결 Web Controller 생성 ===
+    private static final boolean GEN_WEB_CONTROLLER = true;
+
+    // 템플릿 루트(컨트롤러용)  ※ api용(template_do_path)와 분리
+    private static String template_web_root = "/www/smp";
+
+    // 출력 패스/클래스명
+    private static String web_ui_path, web_ui_java_name;
+    
     // === JSP 템플릿/타겟 경로(웹 루트 기준) ===
     private static String jsp_template_root = "/WEB-INF/jsp/www/smp/sample";
     private static String jsp_target_base   = "/WEB-INF/jsp/www";
@@ -123,6 +132,8 @@ public class JavaGen {
         if (GEN_IMPL)       createImpl();
         if (GEN_VO)         createVO();
 
+        if (GEN_WEB_CONTROLLER) createWebController(); // ★ JSP 연결 컨트롤러
+        
         System.out.println("=====================================================");
         System.out.println("생성이 완료되었습니다. 템플릿/치환 결과를 확인하세요.");
         System.out.println("=====================================================");
@@ -148,8 +159,52 @@ public class JavaGen {
         // Service (단일 클래스)
         service_path = full_path + "/" + maxUp_pkg_name + "/service/";
         service_java_name = service_name + "Service";
+        
+        // ★ Web(JSP) Controller 패키지: www/{bbs}/web  → 예) www/bbs/web
+        String bizSeg = getBizSeg(); // ex) bbs
+        web_ui_path = full_path + "/" + up_pk_name + "/" + bizSeg + "/web/";
+        web_ui_java_name = "Web" + service_name + "Controller"; // ex) WebBoardController
     }
 
+    /** JSP 연결 Web 컨트롤러 생성 (www.bbs.web.Web{Service}Controller) */
+    private static void createWebController() {
+        try {
+            String tplRoot = full_path + template_web_root + "/web/";
+            String original_java = tplRoot + "WebTemplateController.java";
+
+            if (fn.fileExists(web_ui_path + "/" + web_ui_java_name + ".java")) {
+                System.out.println(web_ui_path + " 안에 같은 파일이 존재합니다. 생성하지 않습니다.");
+                return;
+            }
+            if (!fn.fileExists(original_java)) {
+                System.out.println("web controller 템플릿 파일이 존재하지 않습니다. (" + original_java + ")"); 
+                return;
+            }
+
+            String bizSeg  = getBizSeg(); // ex) bbs
+            String bizPath = (isBlank(middle_pk_in_name) ? bizSeg : middle_pk_in_name).replace(".", "/"); // ex) bbs/board
+
+            String s = fn.readText(original_java);
+            s = s.replaceAll("www[.]smp[.]web", up_pk_name + "." + bizSeg + ".web");
+            s = s.replace("WebTemplateController", web_ui_java_name);
+            s = s.replace("Template",  service_name);          // Board
+            s = s.replace("template",  toLowerCamel(service_name)); // board
+            s = s.replace("BIZ_SEG",   bizSeg);                // bbs
+            s = s.replace("BIZ_PATH",  bizPath);               // bbs/board
+            s = s.replace("screenTitle", screenTitle);
+            s = s.replace("ctrlDescription", ctrlDescription);
+            s = s.replace("2012. 00. 00.", makeDayDescription);
+            s = s.replace("unitBizName", unitBizName);
+            s = s.replace("NaDa", NaDa);
+
+            fn.makeDirectory(web_ui_path);
+            fn.writeText(web_ui_path + "/" + web_ui_java_name + ".java", s);
+            System.out.println("생성: " + web_ui_path + web_ui_java_name + ".java");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
     /** 컨트롤러 생성   */
     private static void createController() {
         try {

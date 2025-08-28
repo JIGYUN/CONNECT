@@ -7,11 +7,11 @@
                 <!--<a class="text-muted" href="#">Valuable Works</a>-->
             </div>
             <div class="col-4 text-center">  
-                <a class="blog-header-logo text-dark"  href="/">KTR_OLP</a>
+                <a class="blog-header-logo text-dark"  href="/">CONNECT</a>
             </div>
             <div class="col-4 d-flex justify-content-end align-items-center">
             	<sec:authorize ifNotGranted="EXTERNAL_AUTH">
-	                <div style="margin-right:5px;"><a class="btn btn-sm btn-outline-secondary" href="/mba/auth/join">회원가입</a></div>
+	                <div style="margin-right:5px;"><a class="btn btn-sm btn-outline-secondary" href="/mba/auth/companyDocJoin">회원가입</a></div>
 	                <div><a class="btn btn-sm btn-outline-secondary" href="/mba/auth/login">로그인</a></div>
                 </sec:authorize>  
                 <sec:authorize access="hasRole('EXTERNAL_AUTH')">
@@ -27,10 +27,8 @@
         <div class="collapse navbar-collapse" id="navbarsExample09">
             <ul class="navbar-nav mr-auto" id="topBar">
                 <li class="nav-item" id="schedule"><a class="nav-link" href="/bbs/board/boardList">게시판</a></li>
-                <li class="nav-item" id="household"><a class="nav-link" href="/mpg/mypage/companyMemberApprove">기업요청 관리</a></li>
-                <li class="nav-item" id="reminder"><a class="nav-link" href="/mpg/mypage/companyModify">기업정보 관리</a></li>
-                <li class="nav-item" id="place"><a class="nav-link" href="/mpg/mypage/companyMemberSpecify">기업 담당자 관리</a></li> 
-            </ul>     
+                <li class="nav-item" id="schedule"><a class="nav-link" href="/hhd/household/householdList">가게부</a></li>
+            </ul>
         </div>
     </nav>
 </div>

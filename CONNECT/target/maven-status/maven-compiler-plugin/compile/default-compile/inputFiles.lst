@@ -1,11 +1,16 @@
+C:\project\repository\CONNECT\CONNECT\src\main\java\www\com\util\JavaGenProp.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\api\mpg\mypage\web\MypageController.java
+C:\project\repository\CONNECT\CONNECT\src\main\java\www\api\hhd\household\web\HouseholdController.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\api\mba\auth\web\AuthController.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\api\mpg\mypage\service\MypageService.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\api\smp\sample\web\TemplateController.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\com\util\CommonDao.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\com\util\RadioUtil.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\bbs\web\WebBoardController.java
+C:\project\repository\CONNECT\CONNECT\src\main\java\www\api\hhd\household\service\HouseholdService.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\com\util\FtpUtil.java
+C:\project\repository\CONNECT\CONNECT\src\main\java\www\com\util\JavaGen2.java
+C:\project\repository\CONNECT\CONNECT\src\main\java\www\hhd\web\WebHouseholdController.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\com\util\ServerInfo.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\com\session\AuthenticationException.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\mpg\web\WebMypageController.java
@@ -35,6 +40,7 @@ C:\project\repository\CONNECT\CONNECT\src\main\java\www\mai\web\WebMainControlle
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\com\security\provider\WebAuthenticationProvider.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\api\bbs\board\service\BoardService.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\com\security\handler\LoginFailureHandler.java
+C:\project\repository\CONNECT\CONNECT\src\main\java\www\smp\web\WebTemplateController.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\api\mba\auth\service\impl\AuthServiceImpl.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\com\util\FileUtil2.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\com\util\SftpUtil.java
