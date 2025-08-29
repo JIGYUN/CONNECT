@@ -8,6 +8,8 @@
 <body>
     <h2>게시판 목록</h2>
 
+	<button onclick="goToBoardList()">목록</button>		
+
     <!-- ✨ 추가: 제목 한 줄 입력 → Enter로 즉시 등록 -->
     <div style="margin:10px 0;">
         <input type="text" id="titleInput" placeholder="제목 입력 후 Enter" style="width:60%;" />
@@ -134,6 +136,11 @@
 
         function escapeHtml(s){
             return String(s).replace(/[&<>"']/g, function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];});
+        }
+        
+        function goToBoardList() {
+            let url = '/bbs/board/boardList'; 
+            location.href = url;
         }
     </script>
 </body>

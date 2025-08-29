@@ -78,8 +78,8 @@
             </div>  
 	    </div>      
         <div class="row" style="padding:5px;">
-	  	    <div class="col-md-12">
-                <button class="btn btn-primary w-100 py-2" type="button" onClick="goLink('/mba/auth/companyDocJoin')">회원가입</button>
+	  	    <div class="col-md-12">   
+                <button class="btn btn-primary w-100 py-2" type="button" onClick="goLink('/mba/auth/join')">회원가입</button>
             </div>
 	    </div>  
 <!--         <div class="row" style="padding:5px;"> 
@@ -91,7 +91,7 @@
 	  	    <div class="col-md-12">
                 <button class="btn btn-primary w-100 py-2" type="button" onClick="goLink('/mba/auth/pwFind')">비밀번호 찾기</button>
             </div>
-	    </div> -->
+	    </div> --> 
     </form>
     </main>
     </div>

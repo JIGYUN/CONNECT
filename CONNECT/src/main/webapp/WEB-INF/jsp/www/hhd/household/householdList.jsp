@@ -9,6 +9,7 @@
     <h2>가게부 목록</h2>
 
     <button onclick="goToHouseholdModify()">글쓰기</button>
+    <button onclick="goToHousehold()">통합</button>
 
     <table border="1" width="100%">
         <thead>
@@ -64,6 +65,12 @@
             // 페이지 라우팅: /hhd/household/householdModify → /bbs/board/boardModify
             let url = '/hhd/household/householdModify';
             if (id) url += '?' + householdIdx + '=' + encodeURIComponent(id);
+            location.href = url;
+        }
+        
+        function goToHousehold() {
+            // 페이지 라우팅: /hhd/household/householdModify → /bbs/board/boardModify
+            let url = '/hhd/household/household';
             location.href = url;
         }
     </script>

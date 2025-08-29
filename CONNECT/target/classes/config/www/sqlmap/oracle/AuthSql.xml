@@ -3,6 +3,41 @@
 
 <mapper namespace="www.api.mba.auth.Auth">
 	
+		<insert id="insertJoin" parameterType="map">
+	/* www.api.mba.auth.Auth.insertJoin */
+		INSERT INTO
+		MEMBER
+		(
+            ID
+			,PASSWORD
+			,NAME
+			,EMAIL
+			,PHONE
+			,TYPE
+			,GRADE
+			,CREATE_USER
+			,CREATE_DATE
+			,UPDATE_USER
+			,UPDATE_DATE
+
+		)
+		VALUES
+		(
+			#{id}
+			,#{password}
+			,#{name}
+			,#{email}
+			,#{phone}
+			,#{type}
+			,#{grade}
+			,#{createUser}
+			,now()
+			,#{updateUser}
+			,now()
+
+		)
+	</insert>
+	
 	<insert id="insertMember" parameterType="map">
 	/* www.api.mba.auth.Auth.insertMember */
 		INSERT INTO

@@ -50,7 +50,8 @@ public class BoardController {
     @ResponseBody
     public Map<String, Object> insertBoard(@RequestBody HashMap<String, Object> map) throws Exception {
         if (UserSessionManager.isUserLogined()) {   	
-        	map.put("createUser", UserSessionManager.getLoginUserVO().getMberNo());
+        	map.put("createUser", UserSessionManager.getLoginUserVO().getId());
+        	System.out.println("id = " + UserSessionManager.getLoginUserVO().getId()); 
         }
         Map<String, Object> resultMap = new HashMap<>();
         boardService.insertBoard(map);
@@ -65,7 +66,7 @@ public class BoardController {
     @ResponseBody
     public Map<String, Object> updateBoard(@RequestBody HashMap<String, Object> map) throws Exception {
         if (UserSessionManager.isUserLogined()) {   	
-        	map.put("updateUser", UserSessionManager.getLoginUserVO().getMberNo());
+        	map.put("updateUser", UserSessionManager.getLoginUserVO().getId());
         }
         Map<String, Object> resultMap = new HashMap<>();
         boardService.updateBoard(map);

@@ -11,7 +11,7 @@
             </div>
             <div class="col-4 d-flex justify-content-end align-items-center">
             	<sec:authorize ifNotGranted="EXTERNAL_AUTH">
-	                <div style="margin-right:5px;"><a class="btn btn-sm btn-outline-secondary" href="/mba/auth/companyDocJoin">회원가입</a></div>
+	                <div style="margin-right:5px;"><a class="btn btn-sm btn-outline-secondary" href="/mba/auth/join">회원가입</a></div>
 	                <div><a class="btn btn-sm btn-outline-secondary" href="/mba/auth/login">로그인</a></div>
                 </sec:authorize>  
                 <sec:authorize access="hasRole('EXTERNAL_AUTH')">

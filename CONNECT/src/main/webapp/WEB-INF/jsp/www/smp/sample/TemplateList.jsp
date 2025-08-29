@@ -9,6 +9,7 @@
     <h2>screenTitle 목록</h2>
 
     <button onclick="goToTemplateModify()">글쓰기</button>
+    <button onclick="goToTemplate()">통합</button>
 
     <table border="1" width="100%">
         <thead>
@@ -61,9 +62,13 @@
         }
 
         function goToTemplateModify(id) {
-            // 페이지 라우팅: /BIZ_SEG/template/templateModify → /bbs/board/boardModify
             let url = '/BIZ_SEG/template/templateModify';
             if (id) url += '?' + PK_PARAM + '=' + encodeURIComponent(id);
+            location.href = url;
+        }
+        
+        function goToTemplate() {
+            let url = '/BIZ_SEG/template/templateModify';
             location.href = url;
         }
     </script>

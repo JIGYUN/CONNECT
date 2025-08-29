@@ -50,7 +50,7 @@ public class HouseholdController {
     @ResponseBody
     public Map<String, Object> insertHousehold(@RequestBody HashMap<String, Object> map) throws Exception {
         if (UserSessionManager.isUserLogined()) {   	
-        	map.put("createUser", UserSessionManager.getLoginUserVO().getMberNo());
+        	map.put("createUser", UserSessionManager.getLoginUserVO().getId());
         }
         Map<String, Object> resultMap = new HashMap<>();
         householdService.insertHousehold(map);
@@ -65,7 +65,7 @@ public class HouseholdController {
     @ResponseBody
     public Map<String, Object> updateHousehold(@RequestBody HashMap<String, Object> map) throws Exception {
         if (UserSessionManager.isUserLogined()) {   	
-        	map.put("updateUser", UserSessionManager.getLoginUserVO().getMberNo());
+        	map.put("updateUser", UserSessionManager.getLoginUserVO().getId());
         }
         Map<String, Object> resultMap = new HashMap<>();
         householdService.updateHousehold(map);

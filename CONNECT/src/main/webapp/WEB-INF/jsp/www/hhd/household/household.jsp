@@ -7,11 +7,12 @@
 </head>
 <body>
     <h2>가게부 목록</h2>
-
+    
+    <button onclick="goToHouseholdList()">목록</button>		
+	
     <!-- ✨ 추가: 제목 한 줄 입력 → Enter로 즉시 등록 -->
     <div style="margin:10px 0;">
         <input type="text" id="titleInput" placeholder="제목 입력 후 Enter" style="width:60%;" />
-<!--         <span style="color:#666;font-size:12px;">Enter: 추가 / 행의 [삭제] 클릭 시 즉시 삭제</span> -->
     </div>
 
     <table border="1" width="100%">
@@ -134,6 +135,11 @@
 
         function escapeHtml(s){
             return String(s).replace(/[&<>"']/g, function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];});
+        }
+        
+        function goToHouseholdList() {
+            let url = '/hhd/household/householdList';
+            location.href = url; 
         }
     </script>
 </body>

@@ -83,15 +83,15 @@ public class WebAuthenticationProvider implements AuthenticationProvider {
 		params.put("password", sha256.encrypt(mberPw));
 		
 		map = authService.selectLogin(params);
-		
+		 
 		if (map != null) {
-			UserVO userVO = new UserVO(String.valueOf(map.get("mberNo"))
+			UserVO userVO = new UserVO(String.valueOf(map.get("id"))
 													,String.valueOf(map.get("id"))
 													,String.valueOf(map.get("password"))
 													,String.valueOf(map.get("mberNm"))
 													,String.valueOf(map.get("role"))
 													,String.valueOf(map.get("mberSeCd"))
-													,String.valueOf(map.get("cstmrNo"))); 
+													,String.valueOf(map.get("cstmrNo")));
 			/*userVO.setTel(tel);
 			userVO.setLoginType(loginType);*/
 

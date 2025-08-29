@@ -62,7 +62,7 @@
                     alert("조회 중 오류 발생");
                 }
             });
-        }
+        }  
 
         function saveTemplate() {
             const id = $("#" + PK).val();
@@ -85,7 +85,6 @@
                 dataType: "json",
                 data: JSON.stringify(formData),
                 success: function (map) {
-                    alert((map && map.msg) || "저장 완료되었습니다.");
                     goLink("/BIZ_SEG/template/templateList");
                 },
                 error: function () {
@@ -110,7 +109,6 @@
                 dataType: "json",
                 data: JSON.stringify(sendData),
                 success: function (map) {
-                    alert((map && map.msg) || "삭제 완료되었습니다.");
                     goLink("/BIZ_SEG/template/templateList");
                 },
                 error: function () {

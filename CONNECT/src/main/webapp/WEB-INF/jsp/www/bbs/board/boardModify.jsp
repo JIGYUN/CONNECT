@@ -85,7 +85,6 @@
                 dataType: "json",
                 data: JSON.stringify(formData),
                 success: function (map) {
-                    alert((map && map.msg) || "저장 완료되었습니다.");
                     goLink("/bbs/board/boardList");
                 },
                 error: function () {

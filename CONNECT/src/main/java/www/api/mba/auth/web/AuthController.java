@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 
 import www.api.mba.auth.service.AuthService;
-
+ 
 /**
  * 조직관리1 정보 관리 Request를 Servlet으로 Mapping하고 ViewPage로 결과값을 리턴해주는 컨트롤 클래스
  *
@@ -28,6 +28,27 @@ public class AuthController {
     @Autowired
     private AuthService authService;
 
+    /**
+     * 회원가입
+     *
+     * @author 정지균
+     * @since 2024.01.12
+     * @param MciRequest 저장할 데이터
+     * @param Model 저장 결과
+     * @return
+     * @throws Exception
+     */
+    @RequestMapping("/api/auth/insertJoin")
+    @ResponseBody
+    public Map<String, Object> insertJoin(@RequestBody HashMap<String, Object> map) throws Exception
+    {
+        Map<String, Object> resultMap = new HashMap<>();
+        authService.insertJoin(map);
+        
+        resultMap.put("msg", "성공적으로 등록되었습니다.");
+        return resultMap;
+    }
+    
     /**
      * 회원가입
      *

@@ -9,6 +9,7 @@
     <h2>게시판 목록</h2>
 
     <button onclick="goToBoardModify()">글쓰기</button>
+    <button onclick="goToBoard()">통합</button>
 
     <table border="1" width="100%">
         <thead>
@@ -61,9 +62,13 @@
         }
 
         function goToBoardModify(id) {
-            // 페이지 라우팅: /bbs/board/boardModify → /bbs/board/boardModify
             let url = '/bbs/board/boardModify';
             if (id) url += '?' + boardIdx + '=' + encodeURIComponent(id);
+            location.href = url;
+        }
+        
+        function goToBoard() {
+            let url = '/bbs/board/board';
             location.href = url;
         }
     </script>
