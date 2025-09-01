@@ -1,34 +1,40 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://www.springframework.org/security/tags" prefix="sec" %>
-<div class="container">
-    <header class="blog-header py-3">
-        <div class="row flex-nowrap justify-content-between align-items-center">
-            <div class="col-4 pt-1">
-                <!--<a class="text-muted" href="#">Valuable Works</a>-->
-            </div>
-            <div class="col-4 text-center">  
-                <a class="blog-header-logo text-dark"  href="/">CONNECT</a>
-            </div>
-            <div class="col-4 d-flex justify-content-end align-items-center">
-            	<sec:authorize ifNotGranted="EXTERNAL_AUTH">
-	                <div style="margin-right:5px;"><a class="btn btn-sm btn-outline-secondary" href="/mba/auth/join">회원가입</a></div>
-	                <div><a class="btn btn-sm btn-outline-secondary" href="/mba/auth/login">로그인</a></div>
-                </sec:authorize>  
-                <sec:authorize access="hasRole('EXTERNAL_AUTH')">
-                	<div><a class="btn btn-sm btn-outline-secondary" href="/mba/auth/logout">로그아웃</a></div>  
-                </sec:authorize>  
-            </div>  
-        </div>    
-    </header>
-    <nav class="navbar navbar-expand-lg navbar-light bg-light rounded">
-        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExample09" aria-controls="navbarsExample09" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarsExample09">
-            <ul class="navbar-nav mr-auto" id="topBar">
-                <li class="nav-item" id="schedule"><a class="nav-link" href="/bbs/board/boardList">게시판</a></li>
-                <li class="nav-item" id="schedule"><a class="nav-link" href="/hhd/household/householdList">가게부</a></li>
-            </ul>
-        </div>
-    </nav>
-</div>
+
+<!-- 상단 내비게이션 (Pico 패턴) -->
+<nav class="container">
+  <ul>
+    <li><strong><a href="/" style="text-decoration:none">CONNECT</a></strong></li>
+  </ul>
+
+  <ul>
+    <li><a href="/bbs/board/boardList" data-nav="board">게시판</a></li>
+    <li><a href="/hhd/household/householdList" data-nav="household">가계부</a></li>
+  </ul>
+
+  <ul>
+    <sec:authorize access="!hasRole('EXTERNAL_AUTH')">
+      <li><a role="button" class="secondary" href="/mba/auth/join">회원가입</a></li>
+      <li><a role="button" href="/mba/auth/login">로그인</a></li>
+    </sec:authorize>
+    <sec:authorize access="hasRole('EXTERNAL_AUTH')">
+      <li><a role="button" class="outline" href="/mba/auth/logout">로그아웃</a></li>
+    </sec:authorize>
+  </ul>
+</nav>
+
+<script>
+  // 현재 경로에 맞춰 활성 메뉴 표시
+  (function () {
+    const p = location.pathname;
+    const map = [
+      ['board', '/bbs/board/'],
+      ['household', '/hhd/household/']
+    ];
+    document.querySelectorAll('nav [data-nav]').forEach(a => {
+      const key = a.getAttribute('data-nav');
+      const hit = map.find(([k, prefix]) => k === key && p.startsWith(prefix));
+      if (hit) a.setAttribute('aria-current', 'page'); // Pico 스타일의 active
+    });
+  })();
+</script>

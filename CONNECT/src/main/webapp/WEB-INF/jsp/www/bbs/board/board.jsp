@@ -1,147 +1,147 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>게시판 목록</title>
-</head>
-<body>
-    <h2>게시판 목록</h2>
 
-	<button onclick="goToBoardList()">목록</button>		
+<section>
+    <h2 class="mb-3">게시판</h2>
 
-    <!-- ✨ 추가: 제목 한 줄 입력 → Enter로 즉시 등록 -->
-    <div style="margin:10px 0;">
-        <input type="text" id="titleInput" placeholder="제목 입력 후 Enter" style="width:60%;" />
-<!--         <span style="color:#666;font-size:12px;">Enter: 추가 / 행의 [삭제] 클릭 시 즉시 삭제</span> -->
+    <div class="mb-3">
+        <a class="btn btn-outline-secondary" href="/bbs/board/boardList">목록</a>
     </div>
 
-    <table border="1" width="100%">
-        <thead>
-            <tr>
-                <th>번호</th>
-                <th>제목</th>
-<!--                 <th>작성자</th> -->
-                <th>작성일</th> 
-                <th style="width:90px;">관리</th> <!-- ✨ 추가 -->
-            </tr>
-        </thead>
-        <tbody id="boardListBody"></tbody>
-    </table>
+    <div class="mb-3" style="max-width: 640px;">
+        <input
+            type="search"
+            id="titleInput"
+            class="form-control"
+            placeholder="제목 입력 후 Enter"
+            aria-label="제목 입력"
+        />
+    </div>
 
-    <script>
-        // ▼ JavaGen 치환 포인트 유지
-        const API_BASE = '/api/bbs/board';   // → /api/bbs/board
-        const boardIdx = 'boardIdx';             // → boardIdx
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="thead-light">
+                <tr>
+                    <th style="width: 90px; text-align:right;">번호</th>
+                    <th>제목</th>
+                    <th style="width: 220px;">작성일</th>
+                    <th style="width: 90px; text-align:center;">관리</th>
+                </tr>
+            </thead>
+            <tbody id="boardListBody"></tbody>
+        </table>
+    </div>
+</section>
 
-        // 초기 로드
-        (function () {
-            selectBoardList();
-            // ✨ Enter로 추가
-            var input = document.getElementById('titleInput');
-            input.addEventListener('keydown', function(e){
-                if (e.key === 'Enter') {
-                    var title = (input.value || '').trim();
-                    if (title) insertTitle(title);
-                }
-            });
-        })();
+<script>
+    const API_BASE = '/api/bbs/board';
+    const boardIdx = 'boardIdx';
 
-        // 목록 조회 (기존 패턴 유지)
-        function selectBoardList() {
-            $.ajax({
-                url: API_BASE + '/selectBoardList',
-                type: 'post',
-                contentType: 'application/json',
-                data: JSON.stringify({}),
-                success: function (map) {
-                    const resultList = map.result || [];
-                    let html = '';
-                    if (resultList.length === 0) {
-                        html += "<tr><td colspan='5' style='text-align:center;'>등록된 데이터가 없습니다.</td></tr>";
-                    } else {
-                        for (let i = 0; i < resultList.length; i++) {
-                            const r = resultList[i];
-                            let createDate = r.createDate;
-                            if (createDate && typeof createDate === 'object') createDate = (createDate.value || String(createDate));
+    (function () {
+        selectBoardList();
+        var input = document.getElementById('titleInput');
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                var title = (input.value || '').trim();
+                if (title) insertTitle(title);
+            }
+        });
+    })();
 
-                            // 행 클릭 → 기존 modify 이동 유지
-                            html += "<tr onclick=\"goToBoardModify('" + (r.boardIdx) + "')\">";
-                            html += "  <td>" + (r.boardIdx ?? '') + "</td>";
-                            html += "  <td>" + (escapeHtml(r.title ?? '')) + "</td>";
-                            //html += "  <td>" + (escapeHtml(r.createUser ?? '')) + "</td>";
-                            html += "  <td>" + (escapeHtml(createDate ?? '')) + "</td>";
-                            // ✨ 삭제 버튼 (이벤트 전파 막아 modify로 튀지 않게)
-                            html += "  <td style='text-align:center;'>";
-                            html += "    <button type='button' onclick=\"event.stopPropagation(); deleteRow('" + (r.boardIdx) + "')\">삭제</button>";
-                            html += "  </td>";
-                            html += "</tr>";
+    function selectBoardList() {
+        $.ajax({
+            url: API_BASE + '/selectBoardList',
+            type: 'post',
+            contentType: 'application/json',
+            data: JSON.stringify({}),
+            success: function (map) {
+                const resultList = map.result || [];
+                let html = '';
+
+                if (!resultList.length) {
+                    html += "<tr><td colspan='4' class='text-center text-muted'>등록된 데이터가 없습니다.</td></tr>";
+                } else {
+                    for (let i = 0; i < resultList.length; i++) {
+                        const r = resultList[i];
+
+                        let createDate = r.createDate;
+                        if (createDate && typeof createDate === 'object') {
+                            createDate = (createDate.value || String(createDate));
                         }
+
+                        html += "<tr onclick=\"goToBoardModify('" + (r.boardIdx) + "')\">";
+                        html += "  <td class='text-right'>" + (r.boardIdx ?? '') + "</td>";
+                        html += "  <td>" + (escapeHtml(r.title ?? '')) + "</td>";
+                        html += "  <td>" + (escapeHtml(createDate ?? '')) + "</td>";
+                        html += "  <td class='text-center'>";
+                        html += "    <button type='button' class='btn btn-outline-danger btn-sm'";
+                        html += "            aria-label='게시글 " + (r.boardIdx ?? '') + " 삭제'";
+                        html += "            onclick=\"event.stopPropagation(); deleteRow('" + (r.boardIdx) + "')\">삭제</button>";
+                        html += "  </td>";
+                        html += "</tr>";
                     }
-                    $('#boardListBody').html(html);
-                },
-                error: function () { alert('목록 조회 중 오류 발생'); }
-            });
-        }
-
-        // ✨ 제목만 받아 등록 → 성공 시 목록 갱신
-        function insertTitle(title) {
-            // 서버가 JSON(body) 받는 기존 패턴 유지
-            var payload = { title: title };
-            $.ajax({
-                url: API_BASE + '/insertBoard',
-                type: 'post',
-                contentType: 'application/json',
-                dataType: 'json',
-                data: JSON.stringify(payload),
-                success: function () {
-                    document.getElementById('titleInput').value = '';
-                    selectBoardList();
-                },
-                error: function (xhr) {
-                    alert('등록 실패: ' + (xhr.responseText || xhr.status));
                 }
-            });
-        }
 
-        // ✨ 행 즉시 삭제 (기존 deleteBoard 패턴 유지: { boardIdx: id })
-        function deleteRow(id) {
-            if (!id) return;
-            //if (!confirm('정말 삭제하시겠습니까?')) return;
+                $('#boardListBody').html(html);
+            },
+            error: function () {
+                alert('목록 조회 중 오류 발생');
+            }
+        });
+    }
 
-            var sendData = {};
-            sendData[boardIdx] = id;
+    function insertTitle(title) {
+        var payload = { title: title };
 
-            $.ajax({
-                url: API_BASE + '/deleteBoard',
-                type: 'post',
-                contentType: 'application/json',
-                dataType: 'json',
-                data: JSON.stringify(sendData),
-                success: function () {
-                    selectBoardList();
-                },
-                error: function (xhr) {
-                    alert('삭제 실패: ' + (xhr.responseText || xhr.status));
-                }
-            });
-        }
+        $.ajax({
+            url: API_BASE + '/insertBoard',
+            type: 'post',
+            contentType: 'application/json',
+            dataType: 'json',
+            data: JSON.stringify(payload),
+            success: function () {
+                document.getElementById('titleInput').value = '';
+                selectBoardList();
+            },
+            error: function (xhr) {
+                alert('등록 실패: ' + (xhr.responseText || xhr.status));
+            }
+        });
+    }
 
-        function goToBoardModify(id) {
-            // 페이지 라우팅: /bbs/board/boardModify → /bbs/board/boardModify
-            let url = '/bbs/board/boardModify';
-            if (id) url += '?' + boardIdx + '=' + encodeURIComponent(id);
-            location.href = url;
-        }
+    function deleteRow(id) {
+        if (!id) return;
 
-        function escapeHtml(s){
-            return String(s).replace(/[&<>"']/g, function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];});
-        }
-        
-        function goToBoardList() {
-            let url = '/bbs/board/boardList'; 
-            location.href = url;
-        }
-    </script>
-</body>
-</html>
+        var sendData = {};
+        sendData[boardIdx] = id;
+
+        $.ajax({
+            url: API_BASE + '/deleteBoard',
+            type: 'post',
+            contentType: 'application/json',
+            dataType: 'json',
+            data: JSON.stringify(sendData),
+            success: function () {
+                selectBoardList();
+            },
+            error: function (xhr) {
+                alert('삭제 실패: ' + (xhr.responseText || xhr.status));
+            }
+        });
+    }
+
+    function goToBoardModify(id) {
+        let url = '/bbs/board/boardModify';
+        if (id) url += '?' + boardIdx + '=' + encodeURIComponent(id);
+        location.href = url;
+    }
+
+    function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, function (m) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+        });
+    }
+
+    function goToBoardList() {
+        location.href = '/bbs/board/boardList';
+    }
+</script>
