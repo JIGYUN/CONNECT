@@ -1,71 +1,81 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>게시판 목록</title>
-</head>
-<body>
-    <h2>게시판 목록</h2>
 
-    <button onclick="goToBoardModify()">글쓰기</button>
+<section>
+    <h2 class="mb-3">게시판 목록</h2>
 
-    <table border="1" width="100%">
-        <thead>
-            <tr>
-                <th>번호</th>
-                <th>제목</th>
-                <th>작성자</th>
-                <th>작성일</th>
-            </tr>
-        </thead>
-        <tbody id="boardListBody"></tbody>
-    </table>
+    <div class="mb-3">
+        <button class="btn btn-primary" type="button" onclick="goToBoardModify()">글쓰기</button>
+        <button class="btn btn-outline-secondary" type="button" onclick="goToBoard()">통합</button>
+    </div>
 
-    <script>
-        // ▼ JavaGen이 치환: bbs → bbs (또는 원하는 값), Board/board → 서비스명
-        const API_BASE = '/api/bbs/board';   // → /api/bbs/board
-        const boardIdx = 'boardIdx';             // → boardIdx
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="thead-light">
+                <tr>
+                    <th style="width: 90px; text-align:right;">번호</th>
+                    <th>제목</th>
+                    <th style="width: 160px;">작성자</th>
+                    <th style="width: 220px;">작성일</th>
+                </tr>
+            </thead>
+            <tbody id="boardListBody"></tbody>
+        </table>
+    </div>
+</section>
 
-        $(function () { selectBoardList(); });
+<script>
+    const API_BASE = '/api/bbs/board';
+    const boardIdx = 'boardIdx';
 
-        function selectBoardList() {
-            $.ajax({
-                url: API_BASE + '/selectBoardList',
-                type: 'post',
-                contentType: 'application/json',
-                data: JSON.stringify({}),
-                success: function (map) {
-                    const resultList = map.result || [];
-                    let html = '';
-                    if (resultList.length === 0) {
-                        html += "<tr><td colspan='4' style='text-align:center;'>등록된 데이터가 없습니다.</td></tr>";
-                    } else {
-                        for (let i = 0; i < resultList.length; i++) {
-                            const r = resultList[i];
-                            let createDate = r.createDate;
-                            if (createDate && typeof createDate === 'object') createDate = (createDate.value || String(createDate));
+    $(function () {
+        selectBoardList();
+    });
 
-                            html += "<tr onclick=\"goToBoardModify('" + (r.boardIdx) + "')\">";
-                            html += "<td>" + (r.boardIdx) + "</td>";
-                            html += "<td>" + (r.title) + "</td>";
-                            html += "<td>" + (r.createUser) + "</td>";
-                            html += "<td>" + (createDate) + "</td>";
-                            html += "</tr>";
+    function selectBoardList() {
+        $.ajax({
+            url: API_BASE + '/selectBoardList',
+            type: 'post',
+            contentType: 'application/json',
+            data: JSON.stringify({}),
+            success: function (map) {
+                const resultList = map.result || [];
+                let html = '';
+
+                if (!resultList.length) {
+                    html += "<tr><td colspan='4' class='text-center text-muted'>등록된 데이터가 없습니다.</td></tr>";
+                } else {
+                    for (let i = 0; i < resultList.length; i++) {
+                        const r = resultList[i];
+
+                        let createDate = r.createDate;
+                        if (createDate && typeof createDate === 'object') {
+                            createDate = (createDate.value || String(createDate));
                         }
-                    }
-                    $('#boardListBody').html(html);
-                },
-                error: function () { alert('목록 조회 중 오류 발생'); }
-            });
-        }
 
-        function goToBoardModify(id) {
-            // 페이지 라우팅: /bbs/board/boardModify → /bbs/board/boardModify
-            let url = '/bbs/board/boardModify';
-            if (id) url += '?' + boardIdx + '=' + encodeURIComponent(id);
-            location.href = url;
-        }
-    </script>
-</body>
-</html>
+                        html += "<tr onclick=\"goToBoardModify('" + (r.boardIdx) + "')\">";
+                        html += "  <td class='text-right'>" + (r.boardIdx) + "</td>";
+                        html += "  <td>" + (r.title) + "</td>";
+                        html += "  <td>" + (r.createUser) + "</td>";
+                        html += "  <td>" + (createDate) + "</td>";
+                        html += "</tr>";
+                    }
+                }
+
+                $('#boardListBody').html(html);
+            },
+            error: function () {
+                alert('목록 조회 중 오류 발생');
+            }
+        });
+    }
+
+    function goToBoardModify(id) {
+        let url = '/bbs/board/boardModify';
+        if (id) url += '?' + boardIdx + '=' + encodeURIComponent(id);
+        location.href = url;
+    }
+
+    function goToBoard() {
+        location.href = '/bbs/board/board';
+    }
+</script>

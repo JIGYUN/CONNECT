@@ -13,5 +13,19 @@
 	<definition name="*/*/*" extends="layout-tiles">
 		<put-attribute name="body" value="/WEB-INF/jsp/www/{1}/{2}/{3}.jsp" />
 		<put-attribute name="title" value="게시판" />
+	</definition> 
+	
+	<!-- Pico 레이아웃 -->
+<!-- 	<definition name="layout-tiles-pico" template="/WEB-INF/jsp/www/pico-layout/layout.jsp">
+	  <put-attribute name="header" value="/WEB-INF/jsp/www/pico-layout/header.jsp" />
+	  <put-attribute name="left"   value="/WEB-INF/jsp/www/pico-layout/sidebar.jsp" />
+	  <put-attribute name="body"   value="" />
+	  <put-attribute name="foot"   value="/WEB-INF/jsp/www/pico-layout/footer.jsp" />
 	</definition>
+
+    ⬇⬇⬇ 추가: 뷰 이름이 'pico/...'로 들어오면 같은 JSP를 Pico 테마로 렌더
+    <definition name="*/*/*" extends="layout-tiles-pico">
+    	<put-attribute name="body"  value="/WEB-INF/jsp/www/{1}/{2}/{3}.jsp" />
+    	<put-attribute name="title" value="게시판" />
+  	</definition> -->
 </tiles-definitions>

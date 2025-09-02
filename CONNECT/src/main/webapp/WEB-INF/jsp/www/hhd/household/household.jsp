@@ -72,7 +72,7 @@
                         html += "<tr onclick=\"goToHouseholdModify('" + (r.householdIdx) + "')\">";
                         html += "  <td class='text-right'>" + (r.householdIdx ?? '') + "</td>";
                         html += "  <td>" + (escapeHtml(r.title ?? '')) + "</td>";
-                        html += "  <td>" + (escapeHtml(createDate ?? '')) + "</td>";
+                        html += "  <td>" + (escapeHtml(r.regDt ?? '')) + "</td>";  
                         html += "  <td class='text-center'>";
                         html += "    <button type='button' class='btn btn-outline-danger btn-sm'";
                         html += "            aria-label='항목 " + (r.householdIdx ?? '') + " 삭제'";

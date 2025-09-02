@@ -64,7 +64,7 @@ public class JavaGenProp {
 	    // 1) -Dkey=val
 	    String v = System.getProperty(key);
 	    if (v != null) return v;
-	    // 2) ENV: key -> KEY / . -> _
+	    // 2) ENV: key -> KEY / . ->
 	    String envKey = key.replace('.', '_').toUpperCase();
 	    v = System.getenv(envKey);
 	    if (v != null) return v;

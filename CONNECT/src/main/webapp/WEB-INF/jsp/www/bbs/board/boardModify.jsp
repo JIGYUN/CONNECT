@@ -1,33 +1,34 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 
+
 <section>
-    <h2 class="mb-3">게시판 <span id="pageTitle">수정</span></h2>
+    <h2 class="mb-3">BOARD</h2>
 
     <div class="mb-3">
-        <button class="btn btn-primary" type="button" onclick="saveBoard()">저장</button>
+        <button class="btn btn-primary" type="button" onclick="saveBoard()">REPORT</button>
         
 	<c:if test="${not empty param.boardIdx}">
-        <button class="btn btn-outline-danger" type="button" onclick="deleteBoard()">삭제</button>
+        <button class="btn btn-outline-danger" type="button" onclick="deleteBoard()">DELETE</button>
     </c:if>
-        <a class="btn btn-outline-secondary" href="/bbs/board/boardList">목록</a>
+        <a class="btn btn-outline-secondary" href="/bbs/board/boardList">LIST</a>
     </div>
 
     <form id="boardForm">
         <input type="hidden" name="boardIdx" id="boardIdx" value="${param.boardIdx}"/>
 
         <div class="form-group" style="max-width: 840px;">
-            <label for="title">제목</label>
+            <label for="title">TITLE</label>
             <input type="text" class="form-control" name="title" id="title" />
         </div>
 
         <div class="form-group" style="max-width: 840px;">
-            <label for="content">내용</label>
+            <label for="content">CONTENT</label>
             <textarea class="form-control" name="content" id="content" rows="10"></textarea>
         </div>
         
         <div class="form-group" style="max-width: 840px;">
-            <label for="title">첨부파일</label> 
+            <label for="title">FILE</label> 
             <input type="file" class="form-control" name="fileNm" id="fileNm" />
         </div>  
     </form>
@@ -40,10 +41,7 @@
     $(document).ready(function () {
         const id = $("#" + PK).val();
         if (id && id !== "") {
-            readBoard(id);
-            $("#pageTitle").text("수정");
-        } else {
-        	$("#pageTitle").text("등록");
+        	readBoard(id);  
         }
     });
 

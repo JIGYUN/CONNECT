@@ -50,69 +50,6 @@ public class AuthController {
     }
     
     /**
-     * 회원가입
-     *
-     * @author 정지균
-     * @since 2024.01.12
-     * @param MciRequest 저장할 데이터
-     * @param Model 저장 결과
-     * @return
-     * @throws Exception
-     */
-    @RequestMapping("/api/auth/insertMember")
-    @ResponseBody
-    public Map<String, Object> insertMember(@RequestBody HashMap<String, Object> map) throws Exception
-    {
-        Map<String, Object> resultMap = new HashMap<>();
-        authService.insertMember(map);
-        
-        resultMap.put("msg", "성공적으로 등록되었습니다.");
-        return resultMap;
-    }
-    
-    /**
-     * 회원가입
-     *
-     * @author 정지균
-     * @since 2024.01.12
-     * @param MciRequest 저장할 데이터
-     * @param Model 저장 결과
-     * @return
-     * @throws Exception
-     */
-    @RequestMapping("/api/auth/insertCompanyMember")
-    @ResponseBody
-    public Map<String, Object> insertCompanyMember(@RequestBody HashMap<String, Object> map) throws Exception
-    {
-        Map<String, Object> resultMap = new HashMap<>();
-        authService.insertCompanyMember(map);
-        
-        resultMap.put("msg", "성공적으로 등록되었습니다.");
-        return resultMap;
-    }
-
-    /**
-     * 회원가입
-     *
-     * @author 정지균
-     * @since 2024.01.12
-     * @param MciRequest 저장할 데이터
-     * @param Model 저장 결과
-     * @return
-     * @throws Exception
-     */
-    @RequestMapping("/api/auth/insertCompanyManager")
-    @ResponseBody
-    public Map<String, Object> insertCompanyManager(@RequestBody HashMap<String, Object> map) throws Exception
-    {
-        Map<String, Object> resultMap = new HashMap<>();
-        authService.insertCompanyManager(map);
-        
-        resultMap.put("msg", "성공적으로 등록되었습니다.");
-        return resultMap;
-    }
-    
-    /**
      * 로그인
      *
      * @author 정지균
@@ -211,67 +148,6 @@ public class AuthController {
         authService.changePassword(map);
         
         resultMap.put("msg", "성공적으로 변경되었습니다.");
-        return resultMap;
-    }
-    
-    
-    /**
-     * DI값 체크
-     *
-     * @author 정지균
-     * @since 2024.01.12
-     * @param MciRequest 조회 조건
-     * @param Model 조회 결과
-     * @return
-     * @throws Exception
-     */
-    @RequestMapping("/api/auth/checkDi")
-    @ResponseBody
-    public Map<String, Object> checkDi(@RequestBody HashMap<String, Object>  map) throws Exception
-    {
-        Map<String, Object> resultMap = new HashMap<>();
-        resultMap.put("msg", "성공");
-        resultMap.put("result", authService.checkDi(map));
-        return resultMap;
-    }
-    
-    /**
-     * 사업자등록 번호 체크
-     *
-     * @author 정지균
-     * @since 2024.01.12
-     * @param MciRequest 조회 조건
-     * @param Model 조회 결과
-     * @return
-     * @throws Exception
-     */
-    @RequestMapping("/api/auth/checkBizrno")
-    @ResponseBody
-    public Map<String, Object> checkBizrno(@RequestBody HashMap<String, Object>  map) throws Exception
-    {
-        Map<String, Object> resultMap = new HashMap<>();
-        resultMap.put("msg", "성공");
-        resultMap.put("result", authService.checkBizrno(map));
-        return resultMap;
-    }
-
-    /**
-     * 회사 목록
-     *
-     * @author 정지균
-     * @since 2024.01.12
-     * @param MciRequest 조회 조건
-     * @param Model 조회 결과
-     * @return
-     * @throws Exception
-     */
-    @RequestMapping("/api/auth/selectCompanyList")
-    @ResponseBody
-    public Map<String, Object> selectCompanyList(@RequestBody HashMap<String, Object>  map) throws Exception
-    {
-        Map<String, Object> resultMap = new HashMap<>(); 
-        resultMap.put("msg", "성공");
-        resultMap.put("result", authService.selectCompanyList(map));
         return resultMap;
     }
     
