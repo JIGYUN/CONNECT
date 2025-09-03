@@ -24,6 +24,9 @@
                         <a class="nav-link" href="/hhd/household/householdList" data-active="/hdd/household">HOUSEHOLD</a>
                     </li>    
                     <li class="nav-item">
+                        <a class="nav-link" href="/mmp/map/mapList" data-active="/mmp/map">MAP</a>
+                    </li>     
+                    <li class="nav-item">
                         <a class="nav-link" href="/mai/main/culture" data-active="/mai/main">INFO</a>
                     </li>
                 </ul>

@@ -14,7 +14,7 @@
                 <tr>
                     <th style="width: 90px; text-align:right;">번호</th>
                     <th>제목</th>
-                    <th style="width: 160px;">작성자</th>
+                    <!-- <th style="width: 160px;">작성자</th> -->
                     <th style="width: 220px;">작성일</th>
                 </tr>
             </thead>
@@ -55,9 +55,9 @@
                         html += "<tr onclick=\"goToMapModify('" + (r.mapIdx) + "')\">";
                         html += "  <td class='text-right'>" + (r.mapIdx) + "</td>";
                         html += "  <td>" + (r.title) + "</td>";
-                        html += "  <td>" + (r.createUser) + "</td>";
+                        //html += "  <td>" + (r.createUser) + "</td>";
                         html += "  <td>" + (createDate) + "</td>";
-                        html += "</tr>";
+                        html += "</tr>";  
                     }
                 }
 
