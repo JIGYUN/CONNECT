@@ -1,6 +1,10 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 
+<!-- Toast UI Editor CSS/JS -->
+<link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css" />
+<script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+
 <section>
     <h2 class="mb-3">screenTitle <span id="pageTitle">수정</span></h2>
 
@@ -23,27 +27,35 @@
 
         <div class="form-group" style="max-width: 840px;">
             <label for="content">내용</label>
-            <textarea class="form-control" name="content" id="content" rows="10"></textarea>
+            <!-- Toast UI Editor 영역 -->
+            <div id="editor" style="height: 400px;"></div>
+            <!-- 실제 DB 전송용 hidden input -->
+            <input type="hidden" name="content" id="content"/>
         </div>
     </form>
 </section>
 
 <script>
-    /* ===== 치환 토큰 =====
-       - BIZ_SEG: 비즈 세그먼트
-       - Template/template: 서비스명
-       - PK_PARAM: templateIdx 등
-    */
     const API_BASE = '/api/BIZ_SEG/template';
     const PK = 'PK_PARAM';
+    let editor;
 
     $(document).ready(function () {
+        // Toast UI Editor 초기화
+        editor = new toastui.Editor({
+            el: document.querySelector('#editor'),
+            height: '400px',
+            initialEditType: 'markdown',   
+            previewStyle: 'vertical',  
+            placeholder: '내용을 입력해주세요...'
+        });
+
         const id = $("#" + PK).val();
         if (id && id !== "") {
             readTemplate(id);
             $("#pageTitle").text("수정");
         } else {
-        	$("#pageTitle").text("등록");
+            $("#pageTitle").text("등록");
         }
     });
 
@@ -62,8 +74,7 @@
                 if (!result) return;
 
                 $("#title").val(result.title || "");
-                $("#content").val(result.content || "");
-                $("#createUser").val(result.createUser || "");
+                editor.setHTML(result.content || ""); // Toast UI Editor에 값 넣기
             },
             error: function () {
                 alert("조회 중 오류 발생");
@@ -81,10 +92,13 @@
             alert("제목을 입력해주세요.");
             return;
         }
-        if ($("#content").val() === "") {
+        if (editor.getHTML().trim() === "") {
             alert("내용을 입력해주세요.");
             return;
         }
+
+        // Editor 값 hidden input에 동기화
+        $("#content").val(editor.getHTML());
 
         const formData = $("#templateForm").serializeObject();
 
@@ -139,4 +153,4 @@
         });
         return obj;
     };
-</script>
+</script> 

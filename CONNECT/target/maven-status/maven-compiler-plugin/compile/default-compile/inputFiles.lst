@@ -1,9 +1,8 @@
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\com\util\JavaGenProp.java
-C:\project\repository\CONNECT\CONNECT\src\main\java\www\api\mpg\mypage\web\MypageController.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\api\hhd\household\web\HouseholdController.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\api\mba\auth\web\AuthController.java
-C:\project\repository\CONNECT\CONNECT\src\main\java\www\api\mpg\mypage\service\MypageService.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\api\smp\sample\web\TemplateController.java
+C:\project\repository\CONNECT\CONNECT\src\main\java\www\api\mmp\map\web\MapController.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\com\util\CommonDao.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\com\util\RadioUtil.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\bbs\web\WebBoardController.java
@@ -15,7 +14,6 @@ C:\project\repository\CONNECT\CONNECT\src\main\java\www\com\util\ServerInfo.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\com\session\AuthenticationException.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\mpg\web\WebMypageController.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\com\spring\aop\AdminLogAspect.java
-C:\project\repository\CONNECT\CONNECT\src\main\java\www\api\mpg\mypage\service\impl\MypageServiceImpl.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\com\spring\interceptor\OriginalRequestUriSetterInterceptor.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\com\user\service\UserSessionManager.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\com\util\StringUtil2.java
@@ -23,6 +21,7 @@ C:\project\repository\CONNECT\CONNECT\src\main\java\www\com\util\CamelHashMap.ja
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\com\util\ComboUtil.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\com\util\StringUtil.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\api\mba\auth\service\AuthService.java
+C:\project\repository\CONNECT\CONNECT\src\main\java\www\mmp\web\WebMapController.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\api\smp\sample\service\TemplateService.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\api\bbs\board\web\BoardController.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\com\user\service\UserVO.java
@@ -33,6 +32,7 @@ C:\project\repository\CONNECT\CONNECT\src\main\java\www\mba\web\WebAuthControlle
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\com\spring\RelodableValidatorFactory.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\com\spring\interceptor\MultipartRequestContextHolderInterceptor.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\com\util\CookieUtil.java
+C:\project\repository\CONNECT\CONNECT\src\main\java\www\api\mmp\map\service\MapService.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\com\util\JavaGen.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\com\spring\web\HttpServletRequestProvider.java
 C:\project\repository\CONNECT\CONNECT\src\main\java\www\com\util\DateUtil.java

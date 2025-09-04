@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+    <db>
+	    <driver>com.mysql.jdbc.Driver</driver>
+	    <url>jdbc:mysql://127.0.0.1:3306/nfi</url>
+	    <username>root</username>
+	    <password>1234</password>
+	    <validationQuery>SELECT 1</validationQuery>
+    </db>
+</config>

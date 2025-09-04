@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-4.0.xsd">
+
+    <bean id="propertyPlaceholderConfigurer" class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="properties">
+        	<ref bean="commonsConfigurationFactoryBean"/>    
+        </property>
+    </bean>
+    
+    <bean id="commonsConfigurationFactoryBean" class="org.springmodules.commons.configuration.CommonsConfigurationFactoryBean">
+        <property name="configurations">
+            <list>
+                 <ref bean="configuration"/>
+            </list>
+        </property>
+     </bean>
+     
+    <bean id="configuration" class="org.apache.commons.configuration.CompositeConfiguration">
+        <constructor-arg>
+            <list>
+                <bean class="org.apache.commons.configuration.XMLConfiguration">
+                    <constructor-arg type="java.lang.String">
+                    	<value>config/www/www-config.xml</value>
+                    </constructor-arg>
+                    <!-- reload  -->
+                    <!-- <property name="reloadingStrategy">
+                    	<bean class="org.apache.commons.configuration.reloading.FileChangedReloadingStrategy"></bean>
+                    </property> -->
+                </bean>
+            	<bean class="org.apache.commons.configuration.XMLConfiguration">
+                    <constructor-arg type="java.lang.String">
+                    	<value>config/www/package-config.xml</value>
+                    </constructor-arg>
+                </bean>
+            </list>
+        </constructor-arg>
+    </bean>
+    
+</beans>

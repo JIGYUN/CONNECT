@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config>
+
+    <databaseType>1</databaseType>
+    
+    <!-- 배포 설정값 -->
+    <deploy>
+    	<!-- 배포파일 charset -->
+	    <charset>utf-8</charset>
+	    
+	    <!-- 사용자사이트의 메뉴구조XML 생성 경로 -->
+   		<menuXml>
+   			<dir>/WEB-INF/resource/menuXml</dir>
+   			<fileNameSuffix>_menu.xml</fileNameSuffix>
+   		</menuXml>
+   		
+   		<!-- 콘텐츠 배포 경로 -->
+   		<content>
+   			<!-- 일반 콘텐츠 폴더 prefix -->
+   			<dir>${repository.rootFolderName}/content</dir>
+   		</content>
+   	</deploy>
+   	
+    <!-- url정보 -->
+    <url>
+    	<loginForm>/wwwLoginForm.jnr</loginForm>
+    	<login>/wwwLogin.jnr</login>
+    	<logout>/wwwLogout.jnr</logout>
+    	<main>/wwwMain.jnr</main>
+    	<blank>/blank.jnr</blank>
+    	<updateForm>/updatePW.jnr</updateForm>
+    	<update>/wwwUpdate.jnr</update>
+    </url>
+    
+    <!-- 암호화 관련 config -->
+    <crypto>
+    	<password>
+    		<!-- crypto algorithm -->
+    		<algorithm>SHA-256</algorithm>
+    	</password>
+    	<hashed>
+    		<!-- hash password 평문 -->
+    		<plainPassword>www_solution</plainPassword>
+    		
+    		<!-- plainPassword를 암호화한 값 -->
+    		<!-- egovframework.rte.fdl.cryptography.EgovPasswordEncoder main 메소드를 통하여 위의 plainPassword값으로 구한다. -->
+    		<password>3wzaQY1qQUk9kZEjow9J/6t0PAfEf9UjUzJAjFKR9gs=</password>
+    	</hashed>
+    </crypto>
+    
+
+
+    
+    <!-- 단축url 도메인정보 -->
+    <short>
+    	<url>http://localhost:8080</url>
+    </short>
+    
+    <nice>
+    	<sitecode>CC896</sitecode>
+    	<password>eiUdJONUcgdq</password>
+    </nice>
+    
+    <nicecompany>
+    	<sitecode>CC937</sitecode>
+    	<password>YLeHXvc2YQQi</password>
+    </nicecompany>
+    
+</config>

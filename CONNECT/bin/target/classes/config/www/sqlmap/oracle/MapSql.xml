@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.mmp.map.Map">
+
+    <sql id="whereMap">
+        <!-- 
+        동적 검색 조건 템플릿 (필요 시 활성화)
+
+        <choose>
+            <when test='id != null and id != "" '>
+
+            </when>
+            <otherwise>
+
+            </otherwise>
+        </choose>
+
+        <if test="searchField != null and searchText != null and searchField != '' and searchText != ''">
+            <choose>
+                <when test='searchField == "title"'>
+                    AND TITLE LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "content"'>
+                    AND CONTENT LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "writer"'>
+                    AND WRITER LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        -->
+    </sql> 
+
+    <select id="selectMapList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.mmp.map.Map.selectMapList
+         Description : 목록 Query 
+        */
+        SELECT
+            MAP_IDX
+			,TITLE
+			,MAP_GRP_IDX
+			,MAP_NM
+			,CONTENT
+			,LAT
+			,LNG
+			,CREATE_USER
+			,DATE_FORMAT(CREATE_DATE, '%Y-%m-%d %H:%i:%s') AS CREATE_DATE
+			,UPDATE_USER
+			,DATE_FORMAT(UPDATE_DATE, '%Y-%m-%d %H:%i:%s') AS UPDATE_DATE
+
+        FROM map
+        <where>
+            <include refid="whereMap" />
+        </where>
+        ORDER BY MAP_IDX DESC
+        <if test="limit != null and offset != null">
+            /*  페이징 하단 시작  */
+            LIMIT #{limit} OFFSET #{offset}
+            /*  페이징 하단 끝  */
+        </if>
+    </select>
+
+    <select id="selectMapListCount" parameterType="hashmap" resultType="int">
+        /*
+         SQL ID: www.api.mmp.map.Map.selectMapListCount
+         Description : 목록에서 레코드수 Query 
+        */
+        SELECT
+            COUNT(*) CNT
+        FROM map
+        <where>
+            <include refid="whereMap" />
+        </where> 
+    </select>
+
+    <select id="selectMapDetail" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.mmp.map.Map.selectMapDetail
+         Description : 상세조회 Query 
+        */  
+        SELECT
+            MAP_IDX
+			,TITLE
+			,MAP_GRP_IDX
+			,MAP_NM
+			,CONTENT
+			,LAT
+			,LNG
+			,CREATE_USER
+			,DATE_FORMAT(CREATE_DATE, '%Y-%m-%d %H:%i:%s') AS CREATE_DATE
+			,UPDATE_USER
+			,DATE_FORMAT(UPDATE_DATE, '%Y-%m-%d %H:%i:%s') AS UPDATE_DATE
+
+        FROM map
+        WHERE MAP_IDX = #{mapIdx}
+    </select>
+
+    <insert id="insertMap" parameterType="hashmap">
+        /*
+         SQL ID: www.api.mmp.map.Map.insertMap
+         Description : 등록 Query 
+        */
+        INSERT INTO map
+        (
+            TITLE
+			,MAP_GRP_IDX
+			,MAP_NM
+			,CONTENT
+			,LAT
+			,LNG
+			,CREATE_USER
+			,CREATE_DATE
+			,UPDATE_USER
+			,UPDATE_DATE
+
+        )
+        VALUES
+        (
+            #{title}
+			,#{mapGrpIdx}
+			,#{mapNm}
+			,#{content}
+			,#{lat}
+			,#{lng}
+			,#{createUser}
+			,IFNULL(STR_TO_DATE(#{createDate}, '%Y-%m-%d %H:%i:%s'), NOW())
+			,#{updateUser}
+			,IFNULL(STR_TO_DATE(#{updateDate}, '%Y-%m-%d %H:%i:%s'), NOW())
+
+        )
+    </insert>
+
+    <update id="updateMap" parameterType="hashmap">
+        /*
+         SQL ID: www.api.mmp.map.Map.updateMap
+         Description : 수정 Query 
+        */
+        UPDATE map
+        <set>
+            			<if test='title != null and title != ""'>
+				TITLE = #{title},
+			</if>
+			<if test='mapGrpIdx != null and mapGrpIdx != ""'>
+				MAP_GRP_IDX = #{mapGrpIdx},
+			</if>
+			<if test='mapNm != null and mapNm != ""'>
+				MAP_NM = #{mapNm},
+			</if>
+			<if test='content != null and content != ""'>
+				CONTENT = #{content},
+			</if>
+			<if test='lat != null and lat != ""'>
+				LAT = #{lat},
+			</if>
+			<if test='lng != null and lng != ""'>
+				LNG = #{lng},
+			</if>
+			<if test='createUser != null and createUser != ""'>
+				CREATE_USER = #{createUser},
+			</if>
+			<if test='createDate != null and createDate != ""'>
+				CREATE_DATE = STR_TO_DATE(#{createDate}, '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='updateUser != null and updateUser != ""'>
+				UPDATE_USER = #{updateUser},
+			</if>
+			<if test='updateDate != null and updateDate != ""'>
+				UPDATE_DATE = STR_TO_DATE(#{updateDate}, '%Y-%m-%d %H:%i:%s'),
+			</if>
+
+        </set>
+        WHERE MAP_IDX = #{mapIdx}
+    </update>
+
+    <delete id="deleteMap" parameterType="hashmap">
+        /*
+         SQL ID: www.api.mmp.map.Map.deleteMap
+         Description : 삭제 Query 
+        */
+        DELETE FROM map
+        WHERE MAP_IDX = #{mapIdx}
+    </delete>
+
+</mapper>
