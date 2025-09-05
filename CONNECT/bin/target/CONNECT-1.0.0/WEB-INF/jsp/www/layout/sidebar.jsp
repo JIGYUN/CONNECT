@@ -18,29 +18,35 @@
                 <!-- 좌측 메뉴 -->
                 <ul class="navbar-nav mr-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="/bbs/board/boardList" data-active="/bbs/board">게시판</a>
+                        <a class="nav-link" href="/bbs/board/boardList" data-active="/bbs/board">REPORT</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/hhd/household/householdList" data-active="/hhd/household">가계부</a>
+                        <a class="nav-link" href="/hhd/household/householdList" data-active="/hdd/household">HOUSEHOLD</a>
+                    </li>    
+                    <li class="nav-item">
+                        <a class="nav-link" href="/mmp/map/mapList" data-active="/mmp/map">MAP</a>
+                    </li>     
+                    <li class="nav-item">
+                        <a class="nav-link" href="/mai/main/culture" data-active="/mai/main">INFO</a>
                     </li>
                 </ul>
 
                 <!-- 우측 액션 -->
-                <div class="navbar-actions d-flex align-items-center">
+                <div class="navbar-actions d-flex align-items-center">  
                     <sec:authorize ifNotGranted="EXTERNAL_AUTH">
-                        <a class="btn btn-ghost mr-2" href="/mba/auth/join">회원가입</a>
-                        <a class="btn btn-ghost-primary" href="/mba/auth/login">로그인</a>
-                    </sec:authorize>
+                        <a class="btn btn-ghost mr-2" href="/mba/auth/join">JOIN</a>
+                        <a class="btn btn-ghost-primary" href="/mba/auth/login">LOGIN</a>
+                    </sec:authorize>  
 
                     <sec:authorize access="hasRole('EXTERNAL_AUTH')">
                         <div class="dropdown">
                             <button class="btn btn-ghost dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <span class="avatar">U</span> 내 계정
+                                <span class="avatar">U</span> ACCOUNT
                             </button>
                             <div class="dropdown-menu dropdown-menu-right">
-                                <a class="dropdown-item" href="/mypage">마이페이지</a>
+                                <a class="dropdown-item" href="/mypage">MYPAGE</a>
                                 <div class="dropdown-divider"></div>
-                                <a class="dropdown-item text-danger" href="/mba/auth/logout">로그아웃</a>
+                                <a class="dropdown-item text-danger" href="/mba/auth/logout">LOGOUT</a>
                             </div>
                         </div>
                     </sec:authorize>

@@ -4,7 +4,7 @@
 <html>
 <head>
     <meta charset="UTF-8" />
-    <title>지도 포인트 ${empty param.mapIdx ? '등록' : '수정'}</title>
+    <title>지도 ${empty param.mapIdx ? '등록' : '수정'}</title>
 
     <!-- Bootstrap / jQuery -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css"/>
@@ -12,8 +12,8 @@
 
     <!-- Kakao Maps JS SDK : 반드시 JavaScript 키 사용 -->
     <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=b4eb6efe0b6e28aecabcfbb7bee56041&autoload=false&libraries=services"></script>
-
-    <style>   
+ 	
+    <style>    
         .panel { border:1px solid #e9ecef; border-radius:12px; }
         #kmap { height:420px; border-radius:12px; }
         .help-text { color:#6c757d; font-size:.9rem; }

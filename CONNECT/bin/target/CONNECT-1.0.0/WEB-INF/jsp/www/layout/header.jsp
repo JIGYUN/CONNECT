@@ -13,7 +13,7 @@
     <meta name="author" content="ktr" /> 
     <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 
-    <!-- Bootstrap core CSS -->  
+    <!-- Bootstrap core CSS -->   
     <link href="/static/assets/css/bootstrap.min.css" rel="stylesheet">
     <!-- Custom styles for this template -->
     <link href="/static/assets/css/front.css" rel="stylesheet"> 

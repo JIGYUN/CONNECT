@@ -15,7 +15,7 @@
 
             <!-- 메뉴 + 액션 -->
             <div class="collapse navbar-collapse" id="mainNav">
-                <!-- 좌측 메뉴 -->
+                <!-- 좌측 메뉴 -->  
                 <ul class="navbar-nav mr-auto">
                     <li class="nav-item">
                         <a class="nav-link" href="/bbs/board/boardList" data-active="/bbs/board">REPORT</a>
@@ -26,6 +26,9 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/mmp/map/mapList" data-active="/mmp/map">MAP</a>
                     </li>     
+                    <li class="nav-item">
+                        <a class="nav-link" href="/rmd/reminder/reminderList" data-active="/rmd/reminder">REMINDER</a>
+                    </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/mai/main/culture" data-active="/mai/main">INFO</a>
                     </li>
