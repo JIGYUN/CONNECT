@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.sch.schedule.Schedule">
+
+    <sql id="whereSchedule">
+        <!-- 
+        동적 검색 조건 템플릿 (필요 시 활성화)
+
+        <choose>
+            <when test='id != null and id != "" '>
+
+            </when>
+            <otherwise>
+
+            </otherwise>
+        </choose>
+
+        <if test="searchField != null and searchText != null and searchField != '' and searchText != ''">
+            <choose>
+                <when test='searchField == "title"'>
+                    AND TITLE LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "content"'>
+                    AND CONTENT LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "writer"'>
+                    AND WRITER LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        -->
+    </sql> 
+
+    <select id="selectScheduleList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.sch.schedule.Schedule.selectScheduleList
+         Description : 목록 Query 
+        */
+        SELECT
+            SCHEDULE_ID
+
+        FROM TB_SCHEDULE
+        <where>
+            <include refid="whereSchedule" />
+        </where>
+        ORDER BY SCHEDULE_ID DESC
+        <if test="limit != null and offset != null">
+            /*  페이징 하단 시작  */
+            LIMIT #{limit} OFFSET #{offset}
+            /*  페이징 하단 끝  */
+        </if>
+    </select>
+
+    <select id="selectScheduleListCount" parameterType="hashmap" resultType="int">
+        /*
+         SQL ID: www.api.sch.schedule.Schedule.selectScheduleListCount
+         Description : 목록에서 레코드수 Query 
+        */
+        SELECT
+            COUNT(*) CNT
+        FROM TB_SCHEDULE
+        <where>
+            <include refid="whereSchedule" />
+        </where> 
+    </select>
+
+    <select id="selectScheduleDetail" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.sch.schedule.Schedule.selectScheduleDetail
+         Description : 상세조회 Query 
+        */  
+        SELECT
+            SCHEDULE_ID
+
+        FROM TB_SCHEDULE
+        WHERE SCHEDULE_ID = #{scheduleId}
+    </select>
+
+    <insert id="insertSchedule" parameterType="hashmap">
+        /*
+         SQL ID: www.api.sch.schedule.Schedule.insertSchedule
+         Description : 등록 Query 
+        */
+        INSERT INTO TB_SCHEDULE
+        (
+            
+        )
+        VALUES
+        (
+            
+        )
+    </insert>
+
+    <update id="updateSchedule" parameterType="hashmap">
+        /*
+         SQL ID: www.api.sch.schedule.Schedule.updateSchedule
+         Description : 수정 Query 
+        */
+        UPDATE TB_SCHEDULE
+        <set>
+            
+        </set>
+        WHERE SCHEDULE_ID = #{scheduleId}
+    </update>
+
+    <delete id="deleteSchedule" parameterType="hashmap">
+        /*
+         SQL ID: www.api.sch.schedule.Schedule.deleteSchedule
+         Description : 삭제 Query 
+        */
+        DELETE FROM TB_SCHEDULE
+        WHERE SCHEDULE_ID = #{scheduleId}
+    </delete>
+
+</mapper>

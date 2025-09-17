@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.rmd.reminder.Reminder">
+
+    <sql id="whereReminder">
+        <!-- 
+        동적 검색 조건 템플릿 (필요 시 활성화)
+
+        <choose>
+            <when test='id != null and id != "" '>
+
+            </when>
+            <otherwise>
+
+            </otherwise>
+        </choose>
+
+        <if test="searchField != null and searchText != null and searchField != '' and searchText != ''">
+            <choose>
+                <when test='searchField == "title"'>
+                    AND TITLE LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "content"'>
+                    AND CONTENT LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "writer"'>
+                    AND WRITER LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        -->
+    </sql> 
+
+    <select id="selectReminderList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.rmd.reminder.Reminder.selectReminderList
+         Description : 목록 Query 
+        */
+        SELECT
+            REMINDER_IDX
+			,TITLE
+			,CONTENT
+			,REMINDER_CD
+			,REMINDER_ORDER
+			,USE_YN
+			,REG_USR_NO
+			,DATE_FORMAT(REG_DT, '%Y-%m-%d %H:%i:%s') AS REG_DT
+			,MOD_USR_NO
+			,DATE_FORMAT(MOD_DT, '%Y-%m-%d %H:%i:%s') AS MOD_DT
+
+        FROM REMINDER
+        <where>
+            <include refid="whereReminder" />
+        </where>
+        ORDER BY REMINDER_IDX DESC
+        <if test="limit != null and offset != null">
+            /*  페이징 하단 시작  */
+            LIMIT #{limit} OFFSET #{offset}
+            /*  페이징 하단 끝  */
+        </if>
+    </select>
+
+    <select id="selectReminderListCount" parameterType="hashmap" resultType="int">
+        /*
+         SQL ID: www.api.rmd.reminder.Reminder.selectReminderListCount
+         Description : 목록에서 레코드수 Query 
+        */
+        SELECT
+            COUNT(*) CNT
+        FROM REMINDER
+        <where>
+            <include refid="whereReminder" />
+        </where> 
+    </select>
+
+    <select id="selectReminderDetail" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.rmd.reminder.Reminder.selectReminderDetail
+         Description : 상세조회 Query 
+        */  
+        SELECT
+            REMINDER_IDX
+			,TITLE
+			,CONTENT
+			,REMINDER_CD
+			,REMINDER_ORDER
+			,USE_YN
+			,REG_USR_NO
+			,DATE_FORMAT(REG_DT, '%Y-%m-%d %H:%i:%s') AS REG_DT
+			,MOD_USR_NO
+			,DATE_FORMAT(MOD_DT, '%Y-%m-%d %H:%i:%s') AS MOD_DT
+
+        FROM REMINDER
+        WHERE REMINDER_IDX = #{reminderIdx}
+    </select>
+
+    <insert id="insertReminder" parameterType="hashmap">
+        /*
+         SQL ID: www.api.rmd.reminder.Reminder.insertReminder
+         Description : 등록 Query 
+        */
+        INSERT INTO REMINDER
+        (
+            TITLE
+			,CONTENT
+			,REMINDER_CD
+			,REMINDER_ORDER
+			,USE_YN
+			,REG_USR_NO
+			,REG_DT
+			,MOD_USR_NO
+			,MOD_DT
+
+        )
+        VALUES
+        (
+            #{title}
+			,#{content}
+			,#{reminderCd}
+			,#{reminderOrder}
+			,#{useYn}
+			,#{regUsrNo}
+			,IFNULL(STR_TO_DATE(#{regDt}, '%Y-%m-%d %H:%i:%s'), NOW())
+			,#{modUsrNo}
+			,IFNULL(STR_TO_DATE(#{modDt}, '%Y-%m-%d %H:%i:%s'), NOW())
+
+        )
+    </insert>
+
+    <update id="updateReminder" parameterType="hashmap">
+        /*
+         SQL ID: www.api.rmd.reminder.Reminder.updateReminder
+         Description : 수정 Query 
+        */
+        UPDATE REMINDER
+        <set>
+            			<if test='title != null and title != ""'>
+				TITLE = #{title},
+			</if>
+			<if test='content != null and content != ""'>
+				CONTENT = #{content},
+			</if>
+			<if test='reminderCd != null and reminderCd != ""'>
+				REMINDER_CD = #{reminderCd},
+			</if>
+			<if test='reminderOrder != null and reminderOrder != ""'>
+				REMINDER_ORDER = #{reminderOrder},
+			</if>
+			<if test='useYn != null and useYn != ""'>
+				USE_YN = #{useYn},
+			</if>
+			<if test='regUsrNo != null and regUsrNo != ""'>
+				REG_USR_NO = #{regUsrNo},
+			</if>
+			<if test='regDt != null and regDt != ""'>
+				REG_DT = STR_TO_DATE(#{regDt}, '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='modUsrNo != null and modUsrNo != ""'>
+				MOD_USR_NO = #{modUsrNo},
+			</if>
+			<if test='modDt != null and modDt != ""'>
+				MOD_DT = STR_TO_DATE(#{modDt}, '%Y-%m-%d %H:%i:%s'),
+			</if>
+
+        </set>
+        WHERE REMINDER_IDX = #{reminderIdx}
+    </update>
+
+    <delete id="deleteReminder" parameterType="hashmap">
+        /*
+         SQL ID: www.api.rmd.reminder.Reminder.deleteReminder
+         Description : 삭제 Query 
+        */
+        DELETE FROM REMINDER
+        WHERE REMINDER_IDX = #{reminderIdx}
+    </delete>
+
+</mapper>

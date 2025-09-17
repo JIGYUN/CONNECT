@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.hhd.household.Household">
+
+    <sql id="whereHousehold">
+        <!-- 
+        동적 검색 조건 템플릿 (필요 시 활성화)
+
+        <choose>
+            <when test='id != null and id != "" '>
+
+            </when>
+            <otherwise>
+
+            </otherwise>
+        </choose>
+
+        <if test="searchField != null and searchText != null and searchField != '' and searchText != ''">
+            <choose>
+                <when test='searchField == "title"'>
+                    AND TITLE LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "content"'>
+                    AND CONTENT LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "writer"'>
+                    AND WRITER LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        -->
+    </sql> 
+
+    <select id="selectHouseholdList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.hhd.household.Household.selectHouseholdList
+         Description : 목록 Query 
+        */
+        SELECT
+            HOUSEHOLD_IDX
+			,HOUSEHOLD_CD
+			,TITLE
+			,AMOUNT
+			,HOUSEHOLD_ORDER
+			,USE_YN
+			,DATE_FORMAT(HOUSEHOLD_DATE, '%Y-%m-%d %H:%i:%s') AS HOUSEHOLD_DATE
+			,REG_USR_NO
+			,DATE_FORMAT(REG_DT, '%Y-%m-%d %H:%i:%s') AS REG_DT
+			,MOD_USR_NO
+			,DATE_FORMAT(MOD_DT, '%Y-%m-%d %H:%i:%s') AS MOD_DT
+			,DATE_FORMAT(D_DT, '%Y-%m-%d %H:%i:%s') AS D_DT
+			,CONTENT
+
+        FROM HOUSEHOLD
+        <where>
+            <include refid="whereHousehold" />
+        </where>
+        ORDER BY HOUSEHOLD_IDX DESC
+        <if test="limit != null and offset != null">
+            /*  페이징 하단 시작  */
+            LIMIT #{limit} OFFSET #{offset}
+            /*  페이징 하단 끝  */
+        </if>
+    </select>
+
+    <select id="selectHouseholdListCount" parameterType="hashmap" resultType="int">
+        /*
+         SQL ID: www.api.hhd.household.Household.selectHouseholdListCount
+         Description : 목록에서 레코드수 Query 
+        */
+        SELECT
+            COUNT(*) CNT
+        FROM HOUSEHOLD
+        <where>
+            <include refid="whereHousehold" />
+        </where> 
+    </select>
+
+    <select id="selectHouseholdDetail" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.hhd.household.Household.selectHouseholdDetail
+         Description : 상세조회 Query 
+        */  
+        SELECT
+            HOUSEHOLD_IDX
+			,HOUSEHOLD_CD
+			,TITLE
+			,AMOUNT
+			,HOUSEHOLD_ORDER
+			,USE_YN
+			,DATE_FORMAT(HOUSEHOLD_DATE, '%Y-%m-%d %H:%i:%s') AS HOUSEHOLD_DATE
+			,REG_USR_NO
+			,DATE_FORMAT(REG_DT, '%Y-%m-%d %H:%i:%s') AS REG_DT
+			,MOD_USR_NO
+			,DATE_FORMAT(MOD_DT, '%Y-%m-%d %H:%i:%s') AS MOD_DT
+			,DATE_FORMAT(D_DT, '%Y-%m-%d %H:%i:%s') AS D_DT
+			,CONTENT
+
+        FROM HOUSEHOLD
+        WHERE HOUSEHOLD_IDX = #{householdIdx}
+    </select>
+
+    <insert id="insertHousehold" parameterType="hashmap">
+        /*
+         SQL ID: www.api.hhd.household.Household.insertHousehold
+         Description : 등록 Query 
+        */
+        INSERT INTO HOUSEHOLD
+        (
+            HOUSEHOLD_CD
+			,TITLE 
+			,AMOUNT
+			,HOUSEHOLD_ORDER
+			,USE_YN
+			,HOUSEHOLD_DATE
+			,REG_USR_NO
+			,REG_DT
+			,MOD_USR_NO
+			,MOD_DT
+			,D_DT
+			,CONTENT
+
+        )
+        VALUES
+        (
+            #{householdCd}
+			,#{title}
+			,#{amount}
+			,#{householdOrder}
+			,#{useYn}
+			,IFNULL(STR_TO_DATE(#{householdDate}, '%Y-%m-%d %H:%i:%s'), NOW())
+			,#{regUsrNo}
+			,IFNULL(STR_TO_DATE(#{regDt}, '%Y-%m-%d %H:%i:%s'), NOW())
+			,#{modUsrNo}
+			,IFNULL(STR_TO_DATE(#{modDt}, '%Y-%m-%d %H:%i:%s'), NOW())
+			,IFNULL(STR_TO_DATE(#{dDt}, '%Y-%m-%d %H:%i:%s'), NOW())
+			,#{content}
+
+        )
+    </insert>
+
+    <update id="updateHousehold" parameterType="hashmap">
+        /*
+         SQL ID: www.api.hhd.household.Household.updateHousehold
+         Description : 수정 Query 
+        */
+        UPDATE HOUSEHOLD
+        <set>
+            			<if test='householdCd != null and householdCd != ""'>
+				HOUSEHOLD_CD = #{householdCd},
+			</if>
+			<if test='title != null and title != ""'>
+				TITLE = #{title},
+			</if>
+			<if test='amount != null and amount != ""'>
+				AMOUNT = #{amount},
+			</if>
+			<if test='householdOrder != null and householdOrder != ""'>
+				HOUSEHOLD_ORDER = #{householdOrder},
+			</if>
+			<if test='useYn != null and useYn != ""'>
+				USE_YN = #{useYn},
+			</if>
+			<if test='householdDate != null and householdDate != ""'>
+				HOUSEHOLD_DATE = STR_TO_DATE(#{householdDate}, '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='regUsrNo != null and regUsrNo != ""'>
+				REG_USR_NO = #{regUsrNo},
+			</if>
+			<if test='regDt != null and regDt != ""'>
+				REG_DT = STR_TO_DATE(#{regDt}, '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='modUsrNo != null and modUsrNo != ""'>
+				MOD_USR_NO = #{modUsrNo},
+			</if>
+			<if test='modDt != null and modDt != ""'>
+				MOD_DT = STR_TO_DATE(#{modDt}, '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='dDt != null and dDt != ""'>
+				D_DT = STR_TO_DATE(#{dDt}, '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='content != null and content != ""'>
+				CONTENT = #{content},
+			</if>
+
+        </set>
+        WHERE HOUSEHOLD_IDX = #{householdIdx}
+    </update>
+
+    <delete id="deleteHousehold" parameterType="hashmap">
+        /*
+         SQL ID: www.api.hhd.household.Household.deleteHousehold
+         Description : 삭제 Query 
+        */
+        DELETE FROM HOUSEHOLD
+        WHERE HOUSEHOLD_IDX = #{householdIdx}
+    </delete>
+
+</mapper>
