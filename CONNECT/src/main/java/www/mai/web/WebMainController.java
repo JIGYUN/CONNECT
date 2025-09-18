@@ -42,20 +42,6 @@ public class WebMainController {
      */
     @RequestMapping(value="/main/main")
     public String main(ModelMap model) throws Exception {
-    	
-    	/*******************************************************
-        //기본값 처리 
-        ******************************************************/
-
-    	/*******************************************************
-        //Service호출 
-        ******************************************************/
-
-        /*******************************************************
-        //리턴값 처리
-        ******************************************************/	
-
-        
         return "mai/main/main";
     }
     
@@ -64,21 +50,12 @@ public class WebMainController {
      */
     @RequestMapping(value="/main/culture")
     public String culture(ModelMap model) throws Exception {
-    	
-    	/*******************************************************
-        //기본값 처리 
-        ******************************************************/
-
-    	/*******************************************************
-        //Service호출 
-        ******************************************************/
-
-        /*******************************************************
-        //리턴값 처리
-        ******************************************************/	
-
-        
         return "mai/main/culture"; 
+    }
+    
+    @RequestMapping("/main/file")
+    public String file(ModelMap model) throws Exception {
+        return "mai/main/file"; // 뷰: /WEB-INF/views/adm/mai/main/main.jsp (prefix/suffix에 맞춰)
     }
 
 }

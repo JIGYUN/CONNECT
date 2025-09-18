@@ -36,12 +36,12 @@
                         <div class="dropdown">
                             <button class="btn btn-ghost dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <span class="avatar">
-                                    <sec:authentication property="principal.nickname" var="nick"/>
+                                    <sec:authentication property="principal.nickNm" var="nick"/>
                                     <c:out value="${empty nick ? 'U' : fn:substring(nick,0,1)}"/>
                                 </span>
                                 <span>
                                     <c:out value="${nick}"/>
-                                </span>
+                                </span> 
                             </button>
                             <div class="dropdown-menu dropdown-menu-right">
                                 <a class="dropdown-item" href="/mypage">MYPAGE</a>

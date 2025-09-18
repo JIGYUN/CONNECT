@@ -68,7 +68,7 @@ public class WebAuthenticationProvider implements AuthenticationProvider {
             String.valueOf(map.get("email")), 
             String.valueOf(map.get("passwordHash")),
             String.valueOf(map.get("userNm")),
-            String.valueOf(map.get("nickname")),
+            String.valueOf(map.get("nickNm")),
             String.valueOf(map.get("profileImgUrl")),
             String.valueOf(map.get("telno")),
             String.valueOf(map.get("authType")) // 'A' or 'U'

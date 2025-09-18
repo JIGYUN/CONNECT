@@ -3,13 +3,12 @@ package www.api.brd.boardPost.web;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.web.multipart.MultipartFile;
 import www.api.brd.boardPost.service.BoardPostService;
 import www.com.user.service.UserSessionManager;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Controller
 public class BoardPostController {
@@ -44,13 +43,13 @@ public class BoardPostController {
     }
 
     /**
-     * 게시글 등록
+     * 게시글 등록 (JSON 전송) - 기존 유지
      */
     @RequestMapping("/api/brd/boardPost/insertBoardPost")
     @ResponseBody
     public Map<String, Object> insertBoardPost(@RequestBody HashMap<String, Object> map) throws Exception {
-        if (UserSessionManager.isUserLogined()) {   	
-        	map.put("createUser", UserSessionManager.getLoginUserVO().getEmail());
+        if (UserSessionManager.isUserLogined()) {
+            map.put("createUser", UserSessionManager.getLoginUserVO().getEmail());
         }
         Map<String, Object> resultMap = new HashMap<>();
         boardPostService.insertBoardPost(map);
@@ -59,13 +58,13 @@ public class BoardPostController {
     }
 
     /**
-     * 게시글 수정
+     * 게시글 수정 (JSON 전송) - 기존 유지
      */
     @RequestMapping("/api/brd/boardPost/updateBoardPost")
     @ResponseBody
     public Map<String, Object> updateBoardPost(@RequestBody HashMap<String, Object> map) throws Exception {
-        if (UserSessionManager.isUserLogined()) {   	
-        	map.put("updateUser", UserSessionManager.getLoginUserVO().getEmail());
+        if (UserSessionManager.isUserLogined()) {
+            map.put("updateUser", UserSessionManager.getLoginUserVO().getEmail());
         }
         Map<String, Object> resultMap = new HashMap<>();
         boardPostService.updateBoardPost(map);
@@ -96,5 +95,79 @@ public class BoardPostController {
         resultMap.put("msg", "성공");
         resultMap.put("count", count);
         return resultMap;
+    }
+
+    /* ===================== 업로드 포함 등록/수정 (멀티파트) ===================== */
+
+    /**
+     * 게시글 등록 + 파일 업로드 (multipart/form-data)
+     * form-data:
+     *  - title, content, contentHtml(선택), fileGrpId(선택, 기존 그룹 재사용)
+     *  - files (다중)
+     */
+    @PostMapping("/api/brd/boardPost/insertBoardPostWithFiles")
+    @ResponseBody
+    public Map<String, Object> insertBoardPostWithFiles(
+            @RequestParam Map<String, String> form,
+            @RequestParam(value = "files", required = false) List<MultipartFile> files
+    ) throws Exception {
+
+        HashMap<String, Object> map = new HashMap<>(form);
+        if (UserSessionManager.isUserLogined()) {
+            map.put("createUser", UserSessionManager.getLoginUserVO().getEmail());
+        }
+        Long fileGrpId = null;
+        if (form.get("fileGrpId") != null && !form.get("fileGrpId").trim().isEmpty()) {
+            fileGrpId = Long.valueOf(form.get("fileGrpId"));
+        }
+
+        Map<String, Object> out = new HashMap<>();
+        Long boardIdx = boardPostService.insertBoardPostWithFiles(map, files, fileGrpId);
+        out.put("msg", "등록 성공");
+        out.put("boardIdx", boardIdx);
+        out.put("fileGrpId", map.get("fileGrpId")); // 서비스에서 최종 값 세팅됨
+        return out;
+    }
+
+    /**
+     * 게시글 수정 + 파일 업로드/선택 삭제 (multipart/form-data)
+     * form-data:
+     *  - boardIdx(필수), title, content, contentHtml(선택), fileGrpId(선택)
+     *  - files (추가 업로드 다중)
+     *  - deleteFileIds (동일 키로 여러 개 전송 가능)
+     */
+    @PostMapping("/api/brd/boardPost/updateBoardPostWithFiles")
+    @ResponseBody
+    public Map<String, Object> updateBoardPostWithFiles(
+            @RequestParam Map<String, String> form,
+            @RequestParam(value = "files", required = false) List<MultipartFile> files,
+            @RequestParam(value = "deleteFileIds", required = false) String[] deleteFileIds
+    ) throws Exception {
+
+        if (!form.containsKey("boardIdx")) {
+            throw new IllegalArgumentException("boardIdx is required");
+        }
+        HashMap<String, Object> map = new HashMap<>(form);
+        if (UserSessionManager.isUserLogined()) {
+            map.put("updateUser", UserSessionManager.getLoginUserVO().getEmail());
+        }
+
+        Long fileGrpId = null;
+        if (form.get("fileGrpId") != null && !form.get("fileGrpId").trim().isEmpty()) {
+            fileGrpId = Long.valueOf(form.get("fileGrpId"));
+        }
+
+        List<Long> deleteIds = (deleteFileIds == null) ? Collections.emptyList() :
+                Arrays.stream(deleteFileIds)
+                        .filter(s -> s != null && !s.trim().isEmpty())
+                        .map(Long::valueOf)
+                        .collect(Collectors.toList());
+
+        Map<String, Object> out = new HashMap<>();
+        boardPostService.updateBoardPostWithFiles(map, files, fileGrpId, deleteIds);
+        out.put("msg", "수정 성공");
+        out.put("boardIdx", map.get("boardIdx"));
+        out.put("fileGrpId", map.get("fileGrpId"));
+        return out;
     }
 }

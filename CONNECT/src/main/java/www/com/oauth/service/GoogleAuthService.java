@@ -41,7 +41,7 @@ public class GoogleAuthService {
         Map<String,Object> p = new HashMap<>();
         p.put("email",         email);
         p.put("userNm",        name);              // 실명 자리에 우선 name 사용
-        p.put("nickname",      name);              // 닉네임도 초기값으로 name
+        p.put("nickNm",      name);              // 닉네임도 초기값으로 name
         p.put("profileImgUrl", picture);
         p.put("socialSub",     sub);
         p.put("authType",      "G");
@@ -69,7 +69,7 @@ public class GoogleAuthService {
         vo.setEmail(asStr(m.get("email")));
         vo.setPasswordHash(asStr(m.get("passwordHash")));
         vo.setUserNm(asStr(m.get("userNm")));
-        vo.setNickname(asStr(m.get("nickname")));
+        vo.setNickNm(asStr(m.get("nickNm")));
         vo.setProfileImgUrl(asStr(m.get("profileImgUrl")));
         vo.setTelno(asStr(m.get("telno")));
         vo.setAuthType(asStr(m.get("authType")));

@@ -12,7 +12,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 /**
  * 인증된 사용자 VO (TB_USER 매핑)
  * USER_ID -> userId, EMAIL -> email, PASSWORD_HASH -> passwordHash,
- * USER_NM -> userNm, NICKNAME -> nickname, PROFILE_IMG_URL -> profileImgUrl,
+ * USER_NM -> userNm, nickNm -> nickNm, PROFILE_IMG_URL -> profileImgUrl,
  * TELNO -> telno, AUTH_TYPE -> authType
  */
 public class UserVO implements UserDetails, Serializable {
@@ -24,7 +24,7 @@ public class UserVO implements UserDetails, Serializable {
     private String email;          // EMAIL
     private String passwordHash;   // PASSWORD_HASH
     private String userNm;         // USER_NM (실명/이름)
-    private String nickname;       // NICKNAME (표시용 별명)
+    private String nickNm;       // nickNm (표시용 별명)
     private String profileImgUrl;  // PROFILE_IMG_URL (아바타)
     private String telno;          // TELNO
     private String authType;       // AUTH_TYPE: 'U' | 'A' | 'G'...
@@ -35,13 +35,13 @@ public class UserVO implements UserDetails, Serializable {
     public UserVO() {}
 
     public UserVO(String userId, String email, String passwordHash,
-                  String userNm, String nickname, String profileImgUrl,
+                  String userNm, String nickNm, String profileImgUrl,
                   String telno, String authType) {
         this.userId = userId;
         this.email = email;
         this.passwordHash = passwordHash;
         this.userNm = userNm;
-        this.nickname = nickname;
+        this.nickNm = nickNm;
         this.profileImgUrl = profileImgUrl;
         this.telno = telno;
         this.authType = authType;
@@ -86,8 +86,8 @@ public class UserVO implements UserDetails, Serializable {
     public String getUserNm() { return userNm; }
     public void setUserNm(String userNm) { this.userNm = userNm; }
 
-    public String getNickname() { return nickname; }
-    public void setNickname(String nickname) { this.nickname = nickname; }
+    public String getNickNm() { return nickNm; }
+    public void setNickNm(String nickNm) { this.nickNm = nickNm; }
 
     public String getProfileImgUrl() { return profileImgUrl; }
     public void setProfileImgUrl(String profileImgUrl) { this.profileImgUrl = profileImgUrl; }

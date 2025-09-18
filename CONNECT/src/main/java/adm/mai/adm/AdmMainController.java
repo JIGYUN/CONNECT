@@ -12,4 +12,5 @@ public class AdmMainController {
     public String main(ModelMap model) throws Exception {
         return "adm/mai/main/main"; // 뷰: /WEB-INF/views/adm/mai/main/main.jsp (prefix/suffix에 맞춰)
     }
-}
+    
+} 
