@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="www.api.bbs.board.Board">
+
+    <sql id="whereBoard">
+        <!-- 
+        동적 검색 조건 템플릿 (필요 시 활성화)
+
+        <choose>
+            <when test='id != null and id != "" '>
+
+            </when>
+            <otherwise>
+
+            </otherwise>
+        </choose>
+
+        <if test="searchField != null and searchText != null and searchField != '' and searchText != ''">
+            <choose>
+                <when test='searchField == "title"'>
+                    AND TITLE LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "content"'>
+                    AND CONTENT LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <when test='searchField == "writer"'>
+                    AND WRITER LIKE CONCAT('%', #{searchText}, '%')
+                </when>
+                <otherwise>
+                </otherwise>
+            </choose>
+        </if>
+        -->
+    </sql> 
+
+    <select id="selectBoardList" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.bbs.board.Board.selectBoardList
+         Description : 목록 Query 
+        */
+        SELECT
+            BOARD_IDX
+			,BOARD_GRP_IDX
+			,TYPE
+			,TITLE
+			,CONTENT
+			,CREATE_USER
+			,DATE_FORMAT(CREATE_DATE, '%Y-%m-%d %H:%i:%s') AS CREATE_DATE
+			,UPDATE_USER
+			,DATE_FORMAT(UPDATE_DATE, '%Y-%m-%d %H:%i:%s') AS UPDATE_DATE
+
+        FROM BOARD
+        <where>
+            <include refid="whereBoard" />
+        </where>
+        ORDER BY BOARD_IDX DESC
+        <if test="limit != null and offset != null">
+            /*  페이징 하단 시작  */
+            LIMIT #{limit} OFFSET #{offset}
+            /*  페이징 하단 끝  */
+        </if>
+    </select>
+
+    <select id="selectBoardListCount" parameterType="hashmap" resultType="int">
+        /*
+         SQL ID: www.api.bbs.board.Board.selectBoardListCount
+         Description : 목록에서 레코드수 Query 
+        */
+        SELECT
+            COUNT(*) CNT
+        FROM BOARD
+        <where>
+            <include refid="whereBoard" />
+        </where> 
+    </select>
+
+    <select id="selectBoardDetail" parameterType="map" resultType="CamelHashMap">
+        /*
+         SQL ID: www.api.bbs.board.Board.selectBoardDetail
+         Description : 상세조회 Query 
+        */  
+        SELECT
+            BOARD_IDX
+			,BOARD_GRP_IDX
+			,TYPE
+			,TITLE
+			,CONTENT
+			,CREATE_USER
+			,DATE_FORMAT(CREATE_DATE, '%Y-%m-%d %H:%i:%s') AS CREATE_DATE
+			,UPDATE_USER
+			,DATE_FORMAT(UPDATE_DATE, '%Y-%m-%d %H:%i:%s') AS UPDATE_DATE
+
+        FROM BOARD
+        WHERE BOARD_IDX = #{boardIdx}
+    </select>
+
+    <insert id="insertBoard" parameterType="hashmap">
+        /*
+         SQL ID: www.api.bbs.board.Board.insertBoard
+         Description : 등록 Query 
+        */
+        INSERT INTO BOARD
+        (
+            BOARD_GRP_IDX
+			,TYPE
+			,TITLE
+			,CONTENT
+			,CREATE_USER
+			,CREATE_DATE
+			,UPDATE_USER
+			,UPDATE_DATE
+
+        )
+        VALUES
+        (
+            #{boardGrpIdx}
+			,#{type}
+			,#{title}
+			,#{content}
+			,#{createUser}
+			,IFNULL(STR_TO_DATE(#{createDate}, '%Y-%m-%d %H:%i:%s'), NOW())
+			,#{updateUser}
+			,IFNULL(STR_TO_DATE(#{updateDate}, '%Y-%m-%d %H:%i:%s'), NOW())
+
+        )
+    </insert>
+
+    <update id="updateBoard" parameterType="hashmap">
+        /*
+         SQL ID: www.api.bbs.board.Board.updateBoard
+         Description : 수정 Query 
+        */
+        UPDATE BOARD
+        <set>
+            			<if test='boardGrpIdx != null and boardGrpIdx != ""'>
+				BOARD_GRP_IDX = #{boardGrpIdx},
+			</if>
+			<if test='type != null and type != ""'>
+				TYPE = #{type},
+			</if>
+			<if test='title != null and title != ""'>
+				TITLE = #{title},
+			</if>
+			<if test='content != null and content != ""'>
+				CONTENT = #{content},
+			</if>
+			<if test='createUser != null and createUser != ""'>
+				CREATE_USER = #{createUser},
+			</if>
+			<if test='createDate != null and createDate != ""'>
+				CREATE_DATE = STR_TO_DATE(#{createDate}, '%Y-%m-%d %H:%i:%s'),
+			</if>
+			<if test='updateUser != null and updateUser != ""'>
+				UPDATE_USER = #{updateUser},
+			</if>
+			<if test='updateDate != null and updateDate != ""'>
+				UPDATE_DATE = STR_TO_DATE(#{updateDate}, '%Y-%m-%d %H:%i:%s'),
+			</if>
+
+        </set>
+        WHERE BOARD_IDX = #{boardIdx}
+    </update>
+
+    <delete id="deleteBoard" parameterType="hashmap">
+        /*
+         SQL ID: www.api.bbs.board.Board.deleteBoard
+         Description : 삭제 Query 
+        */
+        DELETE FROM BOARD
+        WHERE BOARD_IDX = #{boardIdx}
+    </delete>
+
+</mapper>
