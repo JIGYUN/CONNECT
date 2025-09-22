@@ -50,7 +50,7 @@ public class BoardController {
     @RequestMapping("/api/bbs/board/insertBoard")
     @ResponseBody
     public Map<String, Object> insertBoard(@RequestBody HashMap<String, Object> map) throws Exception {
-        if (UserSessionManager.isUserLogined()) {   	
+        if (UserSessionManager.isUserLogined()) {
         	map.put("createUser", UserSessionManager.getLoginUserVO().getEmail());
         	System.out.println("id = " + UserSessionManager.getLoginUserVO().getEmail()); 
         }

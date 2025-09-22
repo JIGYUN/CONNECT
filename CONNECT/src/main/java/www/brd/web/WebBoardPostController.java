@@ -19,13 +19,13 @@ import java.util.HashMap;
 public class WebBoardPostController {
 
     /** 기본 페이지 */
-    @RequestMapping("/boardPost/boardPost")
+    @RequestMapping("/boardPost/boardPostDetail")
     public String page(ModelMap model, @RequestParam HashMap<String,Object> map) throws Exception {
         if (UserSessionManager.isUserLogined()) {
             model.put("userVO", UserSessionManager.getLoginUserVO());
         }
         model.put("map", map);
-        return "brd/boardPost/boardPost"; // 예) bbs/board/board.jsp
+        return "brd/boardPost/boardPostDetail"; // 예) bbs/board/board.jsp
     }
 
     /** 목록 페이지 */

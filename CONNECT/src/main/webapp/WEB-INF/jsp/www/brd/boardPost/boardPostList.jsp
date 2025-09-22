@@ -116,11 +116,11 @@
                         const viewCnt = text(r.viewCnt || r.VIEW_CNT || 0);
                         const created = text(r.createdDt || r.CREATED_DT || r.createDate || r.CREATE_DATE);
 
-                        html += "<tr onclick=\"goToBoardPostModify('"+ id +"')\">";
+                        html += "<tr onclick=\"goToBoardPostDetail('"+ id +"')\">";
                         html += "  <td class='text-end'>"+ id +"</td>";
                         html += "  <td>"+ title +"</td>";
                         html += "  <td>"+ viewCnt +"</td>";
-                        html += "  <td>"+ created +"</td>";
+                        html += "  <td>"+ created +"</td>";  
                         html += "</tr>";
                     }
                 }
@@ -134,6 +134,16 @@
 
     function goToBoardPostModify(id) {
         let url = '/brd/boardPost/boardPostModify';
+        const b = $('#boardSel').val();
+        const qp = [];
+        if (id) qp.push(PK_PARAM + '=' + encodeURIComponent(id));
+        if (b)  qp.push('boardId=' + encodeURIComponent(b));
+        if (qp.length) url += '?' + qp.join('&');
+        location.href = url;
+    }
+    
+    function goToBoardPostDetail(id) {
+        let url = '/brd/boardPost/boardPostDetail';
         const b = $('#boardSel').val();
         const qp = [];
         if (id) qp.push(PK_PARAM + '=' + encodeURIComponent(id));

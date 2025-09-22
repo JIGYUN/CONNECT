@@ -102,11 +102,11 @@
                     .attr('title', grpCd ? '' : 'GRP_CD가 없어 이동할 수 없습니다.')
                     .on('click', function () { goMapListByGrpCd(grpCd); })
             );
-            $acts.append($('<button/>').addClass('btn btn-sm btn-outline-dark').text('맛집 관리').on('click', function () { goPlaceManage(id); }));
+            //$acts.append($('<button/>').addClass('btn btn-sm btn-outline-dark').text('맛집 관리').on('click', function () { goPlaceManage(id); }));
             $card.append($acts);
 
             $box.append($card);
-        }
+        }  
     }
 
     function goNew() {

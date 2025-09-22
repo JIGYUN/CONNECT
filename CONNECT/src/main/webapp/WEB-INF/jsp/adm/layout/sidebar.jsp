@@ -1,5 +1,5 @@
 <%@ page contentType="text/html; charset=UTF-8" %>
-<%@ taglib prefix="c"  uri="http://java.sun.com/jstl/core_rt" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>  <!-- ✅ 이것만이 맞습니다 -->
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ taglib uri="http://www.springframework.org/security/tags" prefix="sec" %>
 
@@ -187,7 +187,7 @@
             // visible/use 필터
             list = list.filter(function(n){ return n.vis==='Y' && n.use==='Y'; });
 
-            var byId={}, roots=[];
+            var byId={}, roots=[]; 
             list.forEach(function(n){ n.children=[]; byId[n.id]=n; });
             list.forEach(function(n){
                 if (!n.pid || !byId[n.pid]) roots.push(n);

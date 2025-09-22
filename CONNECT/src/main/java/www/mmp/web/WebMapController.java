@@ -17,7 +17,18 @@ import java.util.HashMap;
 @Controller
 @RequestMapping("/mmp") // 예) /bbs
 public class WebMapController {  
-
+	
+	
+    /** 목록 페이지 */
+    @RequestMapping("/map/mapDetail")
+    public String mapDetail(ModelMap model, @RequestParam HashMap<String,Object> map) throws Exception {
+        if (UserSessionManager.isUserLogined()) {
+            model.put("userVO", UserSessionManager.getLoginUserVO());
+        }
+        model.put("map", map);
+        return "mmp/map/mapDetail"; // 예) bbs/board/boardList.jsp
+    }
+	
     /** 목록 페이지 */
     @RequestMapping("/map/mapList")
     public String list(ModelMap model, @RequestParam HashMap<String,Object> map) throws Exception {

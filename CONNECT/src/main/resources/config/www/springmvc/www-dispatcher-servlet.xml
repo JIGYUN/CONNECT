@@ -96,4 +96,10 @@
 	    p:viewClass="org.springframework.web.servlet.view.JstlView"
 	    p:prefix="/WEB-INF/jsp/www/" p:suffix=".jsp"/>
 
+    <!-- ★ 정적 리소스 매핑 (WAR: webapp 밑의 /static 사용) -->
+    <mvc:resources mapping="/static/**" location="/static/"/>
+
+    <!-- ★ DispatcherServlet이 '/'로 매핑되어 있을 때 DefaultServlet로 포워딩 -->
+    <mvc:default-servlet-handler/>
+
 </beans>

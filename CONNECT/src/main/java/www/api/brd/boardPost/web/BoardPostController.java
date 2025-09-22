@@ -144,8 +144,8 @@ public class BoardPostController {
             @RequestParam(value = "deleteFileIds", required = false) String[] deleteFileIds
     ) throws Exception {
 
-        if (!form.containsKey("boardIdx")) {
-            throw new IllegalArgumentException("boardIdx is required");
+        if (!form.containsKey("boardId")) {
+            throw new IllegalArgumentException("boardId is required");
         }
         HashMap<String, Object> map = new HashMap<>(form);
         if (UserSessionManager.isUserLogined()) {

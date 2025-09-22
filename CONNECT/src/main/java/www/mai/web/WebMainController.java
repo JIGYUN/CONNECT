@@ -57,5 +57,10 @@ public class WebMainController {
     public String file(ModelMap model) throws Exception {
         return "mai/main/file"; // 뷰: /WEB-INF/views/adm/mai/main/main.jsp (prefix/suffix에 맞춰)
     }
+    
+    @RequestMapping("/main/mail")
+    public String mail(ModelMap model) throws Exception {
+        return "mai/main/mail"; // 뷰: /WEB-INF/views/adm/mai/main/main.jsp (prefix/suffix에 맞춰)  
+    }
 
 }

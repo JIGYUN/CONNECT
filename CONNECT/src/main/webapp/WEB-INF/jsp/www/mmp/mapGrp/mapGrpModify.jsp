@@ -194,15 +194,15 @@
 
                 // 저장 후 상세로 유지: grpCd 우선
                 if (resGrpCd) {
-                    location.href = '/mmp/mapGrp/mapGrpDetail?grpCd=' + encodeURIComponent(resGrpCd);
+                    location.href = '/mmp/mapGrp/mapGrpList?grpCd=' + encodeURIComponent(resGrpCd);
                     return;
                 }
                 if (resId) {
-                    location.href = '/mmp/mapGrp/mapGrpDetail?mapGrpId=' + encodeURIComponent(resId);
+                    location.href = '/mmp/mapGrp/mapGrpList?mapGrpId=' + encodeURIComponent(resId);
                     return;
                 }
                 // 안전망: 목록으로
-                location.href = '/mmp/mapGrp/mapGrpList';
+                location.href = '/mmp/mapGrp/mapGrpList'; 
             },
             error: function () {
                 alert('저장 오류');

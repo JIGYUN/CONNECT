@@ -53,7 +53,7 @@
                     for (let i = 0; i < resultList.length; i++) {
                         const r = resultList[i];
                         let createDate = r.createDate || r.CREATE_DATE;
-                        html += "<tr onclick=\"goToMapModify('" + (r.mapId || r.MAP_ID) + "')\">";
+                        html += "<tr onclick=\"goToMapDetail('" + (r.mapId || r.MAP_ID) + "')\">";
                         html += "  <td class='text-right'>" + (r.mapId || r.MAP_ID) + "</td>";
                         html += "  <td>" + (r.title || r.TITLE || '') + "</td>";
                         html += "  <td>" + (createDate || '') + "</td>";
@@ -61,7 +61,7 @@
                     }
                 }
 
-                $('#mapListBody').html(html);
+                $('#mapListBody').html(html);  
             },
             error: function () {
                 alert('목록 조회 중 오류 발생');
@@ -72,6 +72,15 @@
     function goToMapModify(id) {
         let url = '/mmp/map/mapModify';
         const query = [];
+        if (id) query.push(PK + '=' + encodeURIComponent(id));
+        if (grpCd) query.push('grpCd=' + encodeURIComponent(grpCd));
+        if (query.length) url += '?' + query.join('&');
+        location.href = url;
+    }
+    
+    function goToMapDetail(id) {
+        let url = '/mmp/map/mapDetail';
+        const query = [];  
         if (id) query.push(PK + '=' + encodeURIComponent(id));
         if (grpCd) query.push('grpCd=' + encodeURIComponent(grpCd));
         if (query.length) url += '?' + query.join('&');
