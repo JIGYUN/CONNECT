@@ -1,154 +1,215 @@
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page language="java" contentType="text/html; charset=UTF-8" %>
+<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css"/>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- 공통 페이징 -->
+<script src="/static/js/paging.js"></script>
 
 <style>
     :root{ --bg:#f6f8fb; --card:#ffffff; --line:#e9edf3; --text:#0f172a; --muted:#6b7280; }
     body{ background:var(--bg); }
-    .page-title{ font-size:28px; font-weight:700; color:var(--text); margin-bottom:12px; }
-    .toolbar{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:8px 0 18px; }
-    .table-card{ background:var(--card); border:1px solid var(--line); border-radius:16px; box-shadow:0 2px 8px rgba(15,23,42,.05); }
-    .table{ margin-bottom:0; }
-    .table thead th{ font-weight:700; color:#475569; background:#f3f5f8; border-bottom:1px solid var(--line); }
-    .table tbody tr{ cursor:pointer; }
-    .table tbody tr:hover{ background:#f9fbff; }
-    .btn,.form-select,.form-control{ border-radius:12px; }
-    #boardSel{ min-width:240px; }
-    .ms-auto{ margin-left:auto; }
+    .page-title{ font-size:26px; font-weight:800; color:var(--text); margin:12px 0 14px; }
+    .toolbar{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:8px 0 16px; }
+    .btn,.form-control,.custom-select{ border-radius:12px; }
+    .table-hover tbody tr{ cursor:pointer; }
 </style>
 
-<section>
-    <h2 class="page-title">게시글</h2>
+<section class="container-fluid">
+    <h2 class="page-title">게시글 목록</h2>
 
     <div class="toolbar">
-        <select id="boardSel" class="form-select"></select>
-        <input id="kw" class="form-control" placeholder="제목 검색" style="width:260px;">
-        <button class="btn btn-outline-secondary" type="button" id="btnSearch">검색</button>
-        <button class="btn btn-primary ms-auto" type="button" onclick="goToBoardPostModify()">글쓰기</button>
+        <input id="keyword" class="form-control" type="text" placeholder="제목/내용 검색"/>
+        <select id="boardId" class="custom-select" style="max-width:160px;">
+            <option value="">전체 게시판</option>
+        </select>
+        <button id="btnSearch" class="btn btn-outline-secondary" type="button">검색</button>
+        <div class="ml-auto"></div>
+        <a class="btn btn-primary" href="/brd/boardPost/boardPostModify">새 글</a>
     </div>
 
-    <div class="table-responsive table-card">
-        <table class="table table-hover align-middle">
-            <thead>
+    <div class="table-responsive card p-2" style="border-radius:16px; border:1px solid var(--line); background:#fff;">
+        <table class="table table-hover align-middle mb-2">
+            <thead class="thead-light">
                 <tr>
-                    <th style="width:90px; text-align:right;">번호</th>
+                    <th style="width: 90px; text-align:right;">번호</th>
                     <th>제목</th>
-                    <th style="width:100px;">조회</th>
-                    <th style="width:200px;">작성일</th>
+                    <th style="width: 220px;">작성일</th>
                 </tr>
             </thead>
-            <tbody id="boardPostListBody">
-                <tr><td colspan="4" class="text-center text-muted">Loading…</td></tr>
-            </tbody>
+            <tbody id="postTbody"></tbody>
         </table>
+
+        <!-- 페이징 -->
+        <div id="pager"></div>
     </div>
 </section>
 
 <script>
-    // API
-    const API_POST  = '/api/brd/boardPost';
-    const API_BOARD = '/api/brd/boardDef';
-    const PK_PARAM  = 'postId';
+    // ===== API =====
+    const API_LIST  = '/api/brd/boardPost/selectBoardPostListPaged';
+    const API_BOARD = '/api/brd/boardDef/selectBoardDefList';
+
+    // ===== sessionStorage 키(페이징.js와 동일 prefix) =====
+    const PAGING_KEY   = location.pathname + '::boardPost';
+    const FILTERS_KEY  = location.pathname + '::boardPost.filters';
+
+    // ===== 전역 =====
+    var pager;
 
     $(function () {
-        loadBoards().then(function () {
-            bindEvents();
-            reload();
+        // 페이징 인스턴스(초기 자동 로드 X)
+        pager = Paging.create('#pager', function (page, size) {
+            loadPage(page, size);
+        }, { size: 20, maxButtons: 7, autoLoad: false, key: 'boardPost' });
+
+        // 필터 복원
+        restoreFilters();
+
+        // 게시판 목록 로드 후, 저장된 page/size 복원하여 최초 호출
+        loadBoards().always(function () {
+            const saved = readSession(PAGING_KEY);
+            const hash  = Paging.parseHash();
+            let p  = (saved && saved.page) ? parseInt(saved.page, 10) : (hash.page ? parseInt(hash.page, 10) : 1);
+            let sz = (saved && saved.size) ? parseInt(saved.size, 10) : (hash.size ? parseInt(hash.size, 10) : pager.getState().size);
+
+            if (isFinite(sz) && sz > 0 && sz !== pager.getState().size) {
+                // setSize가 go(1,true) 호출 → 이후 아래 go로 덮어씀
+                pager.setSize(sz);
+            }
+            if (!isFinite(p) || p < 1) p = 1;
+
+            pager.go(p, true); // 최초 1회만 강제 로드
+        });
+
+        // 검색 버튼/엔터 → 1페이지부터
+        $('#btnSearch').on('click', function () {
+            saveFilters();
+            pager.go(1, true);
+        });
+        $('#keyword').on('keydown', function (e) {
+            if (e.key === 'Enter') {
+                saveFilters();
+                pager.go(1, true);
+            }
+        });
+        $('#boardId').on('change', function () {
+            saveFilters();
+            pager.go(1, true);
         });
     });
 
-    function bindEvents() {
-        $('#boardSel').on('change', reload);
-        $('#btnSearch').on('click', reload);
-        $('#kw').on('keyup', function (e) { if (e.key === 'Enter') reload(); });
-    }
-
-    function getParam(name){
-        const url = new URL(location.href);
-        return url.searchParams.get(name);
-    }
-
-    function text(v){ return (v == null ? '' : String(v)); }
-
-    function loadBoards(){
+    // ===== Boards 드롭다운 =====
+    function loadBoards () {
         return $.ajax({
-            url: API_BOARD + '/selectBoardDefList',
+            url: API_BOARD,
             type: 'post',
             contentType: 'application/json',
-            data: JSON.stringify({ useAt: 'Y' })
-        }).then(function (map){
-            const list = map.result || map.list || [];
-            let html = '';
-            for (let i=0;i<list.length;i++){
-                const r = list[i];
-                html += '<option value="'+ text(r.boardId || r.BOARD_ID) +'">'
-                      + text(r.boardNm || r.title || r.BOARD_NM || r.TITLE)
-                      + '</option>';
+            data: JSON.stringify({ useAt: 'Y' }),
+            success: function (map) {
+                var list = map.result || map.list || [];
+                var $sel = $('#boardId').empty();
+                $sel.append('<option value="">전체 게시판</option>');
+                for (var i = 0; i < list.length; i++) {
+                    var r = list[i];
+                    var id = r.boardId || r.BOARD_ID;
+                    var nm = r.boardNm || r.BOARD_NM || r.title || r.TITLE;
+                    if (id && nm) $sel.append('<option value="' + id + '">' + nm + '</option>');
+                }
+                // 필터 복원 시 boardId 값 반영
+                const f = readSession(FILTERS_KEY);
+                if (f && f.boardId != null) $sel.val(f.boardId);
             }
-            $('#boardSel').html(html);
-
-            // URL ?boardId 유지
-            const q = getParam('boardId');
-            if (q) $('#boardSel').val(q);
         });
     }
 
-    function reload(){
-        const data = {
-            boardId: $('#boardSel').val(),
-            kw: $('#kw').val()
+    // ===== 목록 로딩 =====
+    function loadPage (page, size) {
+        var params = {
+            page   : page,
+            size   : size,
+            boardId: $('#boardId').val() || null,
+            keyword: $('#keyword').val() || null
         };
-
         $.ajax({
-            url: API_POST + '/selectBoardPostList',
+            url: API_LIST,
             type: 'post',
             contentType: 'application/json',
-            data: JSON.stringify(data),
-            success: function (map) {
-                const resultList = map.result || map.list || [];
-                let html = '';
-
-                if (!resultList.length) {
-                    html += "<tr><td colspan='4' class='text-center text-muted'>등록된 글이 없습니다.</td></tr>";
-                } else {
-                    for (let i=0;i<resultList.length;i++){
-                        const r = resultList[i];
-                        const id = r.postId || r.POST_ID || r.boardPostIdx;
-                        const title = text(r.title || r.TITLE);
-                        const viewCnt = text(r.viewCnt || r.VIEW_CNT || 0);
-                        const created = text(r.createdDt || r.CREATED_DT || r.createDate || r.CREATE_DATE);
-
-                        html += "<tr onclick=\"goToBoardPostDetail('"+ id +"')\">";
-                        html += "  <td class='text-end'>"+ id +"</td>";
-                        html += "  <td>"+ title +"</td>";
-                        html += "  <td>"+ viewCnt +"</td>";
-                        html += "  <td>"+ created +"</td>";  
-                        html += "</tr>";
-                    }
+            dataType: 'json',
+            data: JSON.stringify(params),
+            success: function (res) {
+                renderRows(res.result || []);
+                if (res.page) {
+                    // update가 내부적으로 session/hash를 동기화함
+                    pager.update(res.page);
                 }
-                $('#boardPostListBody').html(html);
             },
             error: function () {
-                $('#boardPostListBody').html("<tr><td colspan='4' class='text-center text-danger'>목록 조회 중 오류</td></tr>");
+                alert('목록 조회 실패');
             }
         });
     }
 
-    function goToBoardPostModify(id) {
-        let url = '/brd/boardPost/boardPostModify';
-        const b = $('#boardSel').val();
-        const qp = [];
-        if (id) qp.push(PK_PARAM + '=' + encodeURIComponent(id));
-        if (b)  qp.push('boardId=' + encodeURIComponent(b));
-        if (qp.length) url += '?' + qp.join('&');
-        location.href = url;
+    // ===== 테이블 렌더 =====
+    function renderRows (rows) {
+        var $tb = $('#postTbody').empty();
+        if (!rows || !rows.length) {
+            $tb.append('<tr><td colspan="3" class="text-center text-muted">등록된 데이터가 없습니다.</td></tr>');
+            return;
+        }
+        for (var i = 0; i < rows.length; i++) {
+            var r = rows[i];
+            var id = r.POST_ID || r.postId;
+            var title = r.TITLE || r.title || '(제목 없음)';
+            var created = r.CREATED_DT || r.createdDt || '';
+            var tr = '<tr onclick="goDetail(' + id + ')">';
+            tr += '  <td class="text-right">' + id + '</td>';
+            tr += '  <td>' + escapeHtml(title) + '</td>';
+            tr += '  <td>' + created + '</td>';
+            tr += '</tr>';
+            $tb.append(tr);
+        }
     }
-    
-    function goToBoardPostDetail(id) {
-        let url = '/brd/boardPost/boardPostDetail';
-        const b = $('#boardSel').val();
-        const qp = [];
-        if (id) qp.push(PK_PARAM + '=' + encodeURIComponent(id));
-        if (b)  qp.push('boardId=' + encodeURIComponent(b));
-        if (qp.length) url += '?' + qp.join('&');
-        location.href = url;
+
+    // ===== 상세 이동 =====
+    function goDetail (id) {
+        if (!id) return;
+        // 페이징.js가 session/hash를 이미 저장하고 있으므로 단순 이동만 하면 복귀 시 복원됨
+        location.href = '/brd/boardPost/boardPostModify?postId=' + encodeURIComponent(id);
     }
-</script>
+
+    // ===== 필터 저장/복원 =====
+    function saveFilters () {
+        var f = {
+            boardId: $('#boardId').val() || '',
+            keyword: $('#keyword').val() || ''
+        };
+        writeSession(FILTERS_KEY, f);
+    }
+    function restoreFilters () {
+        var f = readSession(FILTERS_KEY);
+        if (f) {
+            if (f.keyword != null) $('#keyword').val(f.keyword);
+            // boardId는 loadBoards()에서 옵션 생성 후에 반영
+        }
+    }
+
+    // ===== sessionStorage 유틸 =====
+    function readSession (key) {
+        try { var v = sessionStorage.getItem(key); return v ? JSON.parse(v) : null; } catch (e) { return null; }
+    }
+    function writeSession (key, obj) {
+        try { sessionStorage.setItem(key, JSON.stringify(obj)); } catch (e) {}
+    }
+
+    // ===== HTML escape =====
+    function escapeHtml (s) {
+        return String(s || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+</script>  

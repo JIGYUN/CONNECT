@@ -7,7 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import www.com.util.CommonDao;
-import www.api.com.file.service.FileService; // ⬅ 공용 파일 서비스 (앞서 만든 것)
+import www.api.com.file.service.FileService;
 
 @Service
 public class BoardPostService {
@@ -21,32 +21,66 @@ public class BoardPostService {
     private FileService fileService;
 
     /**
-     * 템플릿 목록 조회
+     * 목록 조회 (기존)
      */
     public List<Map<String, Object>> selectBoardPostList(Map<String, Object> paramMap) {
         return dao.list(namespace + ".selectBoardPostList", paramMap);
     }
 
     /**
-     * 템플릿 목록 수 조회
+     * 목록 수 조회 (기존)
      */
     public int selectBoardPostListCount(Map<String, Object> paramMap) {
-        Map<String, Object> resultMap = dao.selectOne(namespace + ".selectBoardPostListCount", paramMap);
-        if (resultMap != null && resultMap.get("cnt") != null) {
-            return Integer.parseInt(resultMap.get("cnt").toString());
-        }
-        return 0;
+    	return dao.selectOneInt(namespace + ".selectBoardPostListCount", paramMap);
     }
 
     /**
-     * 템플릿 단건 조회
+     * 목록 조회 (페이징 추가)
+     * 입력: paramMap 내 page/size(+ 검색필터)
+     * 출력: { list, page:{page,size,total,totalPages,hasNext,hasPrev} }
+     */
+    public Map<String, Object> selectBoardPostListPaged(Map<String, Object> paramMap) {
+        Map<String, Object> p = (paramMap == null) ? new HashMap<>() : new HashMap<>(paramMap);
+
+        int page = parseInt(p.get("page"), 1);
+        int size = parseInt(p.get("size"), 20);
+        if (page < 1) page = 1;
+        if (size < 1) size = 20;
+        if (size > 200) size = 200;
+
+        int offset = (page - 1) * size;
+        p.put("limit", size);
+        p.put("offset", offset);
+
+        List<Map<String, Object>> list = dao.list(namespace + ".selectBoardPostList", p);
+        int total = selectBoardPostListCount(p);
+        long totalPages = (total + size - 1L) / size;
+        boolean hasNext = page * size < total;
+        boolean hasPrev = page > 1;
+
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("page", page);
+        meta.put("size", size);
+        meta.put("total", total);
+        meta.put("totalPages", totalPages);
+        meta.put("hasNext", hasNext);
+        meta.put("hasPrev", hasPrev);
+
+        Map<String, Object> out = new HashMap<>();
+        out.put("list", list);
+        out.put("page", meta);
+        return out;
+    }
+
+    /**
+     * 단건 조회 (기존)
      */
     public Map<String, Object> selectBoardPostDetail(Map<String, Object> paramMap) {
         return dao.selectOne(namespace + ".selectBoardPostDetail", paramMap);
     }
 
     /**
-     * 템플릿 등록 (JSON)
+     * 등록 (JSON, 기존)
      */
     @Transactional
     public void insertBoardPost(Map<String, Object> paramMap) {
@@ -54,7 +88,7 @@ public class BoardPostService {
     }
 
     /**
-     * 템플릿 수정 (JSON)
+     * 수정 (JSON, 기존)
      */
     @Transactional
     public void updateBoardPost(Map<String, Object> paramMap) {
@@ -62,7 +96,7 @@ public class BoardPostService {
     }
 
     /**
-     * 템플릿 삭제
+     * 삭제 (기존)
      */
     @Transactional
     public void deleteBoardPost(Map<String, Object> paramMap) {
@@ -73,60 +107,50 @@ public class BoardPostService {
 
     /**
      * 등록 + 파일업로드
-     * @param paramMap title, content, contentHtml, createUser 등
-     * @param files    업로드할 파일들(없으면 null/빈 리스트)
-     * @param fileGrpId 기존 그룹 재사용 시 전달(없으면 null)
-     * @return boardIdx (PK)
      */
     @Transactional
     public Long insertBoardPostWithFiles(Map<String, Object> paramMap,
                                          List<MultipartFile> files,
                                          Long fileGrpId) {
-        // 1) 파일 업로드 (있으면)
         if (files != null && !files.isEmpty()) {
             Map<String, Object> res = fileService.upload(fileGrpId, null, "BOARD 첨부", files);
             fileGrpId = ((Number) res.get("fileGrpId")).longValue();
         }
-        // 2) 최종 그룹 키 세팅
         paramMap.put("fileGrpId", fileGrpId);
 
-        // 3) 게시글 INSERT
         dao.insert(namespace + ".insertBoardPost", paramMap);
-        // useGeneratedKeys="true" keyProperty="boardIdx" 가 매퍼에 있다면 paramMap에 채워짐
-        Object pk = paramMap.get("boardIdx");
+        Object pk = paramMap.get("boardIdx"); // 매퍼에 useGeneratedKeys 설정 시 주입됨
         return (pk == null) ? null : ((Number) pk).longValue();
     }
 
     /**
      * 수정 + 파일추가/선택삭제
-     * @param paramMap boardIdx, title, content, contentHtml, updateUser 등
-     * @param files 새로 추가할 파일들
-     * @param fileGrpId 기존 그룹(없으면 null → 업로드 시 생성)
-     * @param deleteFileIds 선택 삭제할 FILE_ID 목록
      */
     @Transactional
     public void updateBoardPostWithFiles(Map<String, Object> paramMap,
                                          List<MultipartFile> files,
                                          Long fileGrpId,
                                          List<Long> deleteFileIds) {
-        // 1) 선택 삭제 먼저 처리 (soft delete)
         if (deleteFileIds != null && !deleteFileIds.isEmpty()) {
             for (Long fid : deleteFileIds) {
-                // 파일 서비스에 softDelete가 있다면 호출
-                // fileService.softDelete(fid);
-                // 없다면 매퍼 직접 호출 (공유 XML: www.api.com.file.File.softDeleteFile)
                 dao.update("www.api.com.file.File.softDeleteFile", Collections.singletonMap("fileId", fid));
             }
         }
 
-        // 2) 파일 추가 업로드
         if (files != null && !files.isEmpty()) {
             Map<String, Object> res = fileService.upload(fileGrpId, null, "BOARD 첨부", files);
             fileGrpId = ((Number) res.get("fileGrpId")).longValue();
         }
 
-        // 3) 최종 그룹 키 세팅 후 UPDATE
         paramMap.put("fileGrpId", fileGrpId);
         dao.update(namespace + ".updateBoardPost", paramMap);
+    }
+
+    /* ===================== 내부 유틸 ===================== */
+
+    private int parseInt(Object v, int def) {
+        if (v == null) return def;
+        if (v instanceof Number) return ((Number) v).intValue();
+        try { return Integer.parseInt(String.valueOf(v)); } catch (Exception e) { return def; }
     }
 }

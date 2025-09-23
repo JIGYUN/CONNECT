@@ -17,7 +17,7 @@ public class BoardPostController {
     private BoardPostService boardPostService;
 
     /**
-     * 게시판 목록 조회
+     * 게시판 목록 조회 (기존 유지)
      */
     @RequestMapping("/api/brd/boardPost/selectBoardPostList")
     @ResponseBody
@@ -27,6 +27,22 @@ public class BoardPostController {
         resultMap.put("msg", "성공");
         resultMap.put("result", result);
         return resultMap;
+    }
+
+    /**
+     * 게시판 목록 조회 (페이징 추가)
+     * body: { page:1, size:20, ...검색필터 }
+     * 응답: { msg, result:[...], page:{page,size,total,totalPages,hasNext,hasPrev} }
+     */
+    @PostMapping("/api/brd/boardPost/selectBoardPostListPaged")
+    @ResponseBody
+    public Map<String, Object> selectBoardPostListPaged(@RequestBody HashMap<String, Object> body) throws Exception {
+        Map<String, Object> paged = boardPostService.selectBoardPostListPaged(body);
+        Map<String, Object> out = new HashMap<>();
+        out.put("msg", "성공");
+        out.put("result", paged.get("list"));
+        out.put("page", paged.get("page"));
+        return out;
     }
 
     /**

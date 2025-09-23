@@ -24,9 +24,11 @@
     <link rel="stylesheet" href="<c:url value='/static/assets/css/bootstrap-datepicker.css'/>">
 
     <!-- JS (문서 하단 로딩 권장이나, 현 구조 유지) -->
+    <script src="<c:url value='/static/assets/js/paging.js'/>"></script>  
     <script src="<c:url value='/static/assets/js/jquery.min.js'/>"></script>
     <script src="<c:url value='/static/assets/js/bootstrap.min.js'/>"></script>
     <script src="<c:url value='/static/assets/js/common.js'/>"></script>
+    
     <!-- CDN은 https 고정 또는 스킴 상대 // 사용 -->
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <script src="<c:url value='/static/assets/js/bootstrap-datepicker.js'/>"></script>
@@ -50,3 +52,7 @@
         }
     </style>
 </head>
+<form>  
+	<input type="hidden" name="page" value="${map.page}" />
+	<input type="hidden" name="pageSize" value="${map.pageSize}" />
+</form>

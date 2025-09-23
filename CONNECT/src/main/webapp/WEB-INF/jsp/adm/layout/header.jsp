@@ -27,6 +27,7 @@
     <script src="<c:url value='/static/assets/js/jquery.min.js'/>"></script>
     <script src="<c:url value='/static/assets/js/bootstrap.min.js'/>"></script>
     <script src="<c:url value='/static/assets/js/common.js'/>"></script>
+    <script src="<c:url value='/static/assets/js/paging.js'/>"></script>   
     <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
     <script src="<c:url value='/static/assets/js/bootstrap-datepicker.js'/>"></script>   
     <script> 
@@ -70,3 +71,7 @@
 	    </div>  
 	</div>
 </head>
+<form>
+	<input type="hidden" name="page" value="${map.page}" />
+	<input type="hidden" name="pageSize" value="${map.pageSize}" />
+</form>
