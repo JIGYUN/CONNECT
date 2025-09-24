@@ -49,18 +49,16 @@
         <c:if test="${not empty param.postId}">
             <button class="btn btn-outline-danger" type="button" onclick="deleteBoardPost()">삭제</button>
         </c:if>
-        <a class="btn btn-outline-secondary" href="/brd/boardPost/boardPostList">목록</a>
+        <a id="btnList" class="btn btn-outline-secondary" href="/brd/boardPost/boardPostList">목록</a>
     </div>
 
     <form id="boardPostForm" class="card" onsubmit="return false;">
         <input type="hidden" name="postId" id="postId" value="${param.postId}"/>
         <input type="hidden" name="fileGrpId" id="fileGrpId" value="${result.fileGrpId}"/>
+        <!-- 선택 UI 제거: 메뉴에서 전달된 boardId만 사용 -->
+        <input type="hidden" name="boardId" id="boardId" value="${param.boardId}"/>
 
         <div class="row g-3">
-            <div class="col-md-4">
-                <label for="boardId" class="form-label">게시판</label>
-                <select id="boardId" name="boardId" class="form-select"></select>
-            </div>
             <div class="col-12">
                 <label for="title" class="form-label">제목</label>
                 <input type="text" class="form-control" name="title" id="title" placeholder="제목을 입력하세요">
@@ -107,10 +105,9 @@
 </section>
 
 <script>
-    const API_POST   = '/api/brd/boardPost';
-    const API_BOARD  = '/api/brd/boardDef';
-    const FILE_API   = { list: '/api/com/file/list', download: function(id){ return '/api/com/file/download/' + id; } };
-    const PK         = 'postId';
+    const API_POST = '/api/brd/boardPost';
+    const FILE_API = { list: '/api/com/file/list', download: function(id){ return '/api/com/file/download/' + id; } };
+    const PK       = 'postId';
     let editor;
     let pendingFiles = [];
 
@@ -125,6 +122,15 @@
     function cmtTargetId(){ return $('#postId').val(); }
 
     $(document).ready(function () {
+        // boardId 보정: 쿼리스트링 → hidden에 주입
+        var qBoard = getParam('boardId');
+        if (qBoard && !$('#boardId').val()) {
+            $('#boardId').val(qBoard);
+        }
+
+        // 목록 버튼: 현재 boardId를 유지해 회귀
+        $('#btnList').attr('href', '/brd/boardPost/boardPostList' + (qBoard ? ('?boardId=' + encodeURIComponent(qBoard)) : ''));
+
         editor = new toastui.Editor({
             el: document.querySelector('#editor'),
             height: '460px',
@@ -154,17 +160,14 @@
             }
         });
 
-        loadBoards().then(function(){
-            const id = $("#" + PK).val();
-            if (id) {
-                readBoardPost(id);
-                $("#pageTitle").text("수정");
-            } else {
-                const qBoard = getParam('boardId');
-                if (qBoard) $('#boardId').val(qBoard);
-                $("#pageTitle").text("등록");
-            }
-        });
+        const id = $("#" + PK).val();
+        if (id) {
+            readBoardPost(id);
+            $("#pageTitle").text("수정");
+        } else {
+            // 신규 등록 시: boardId 없으면 비정상 진입 → 저장 전에 가드
+            $("#pageTitle").text("등록");
+        }
 
         const initGid = $('#fileGrpId').val();
         if (initGid) { renderServerAttach(initGid); }
@@ -178,25 +181,6 @@
         return url.searchParams.get(name);
     }
 
-    function loadBoards(){
-        return $.ajax({
-            url: API_BOARD + '/selectBoardDefList',
-            type: 'post',
-            contentType: 'application/json',
-            data: JSON.stringify({ useAt: 'Y' })
-        }).then(function (map){
-            const list = map.result || map.list || [];
-            let html = '';
-            for (let i=0;i<list.length;i++){
-                const r = list[i];
-                const id = r.boardId || r.BOARD_ID;
-                const nm = r.boardNm || r.title || r.BOARD_NM || r.TITLE;
-                html += '<option value="'+ id +'">'+ nm +'</option>';
-            }
-            $('#boardId').html(html);
-        });
-    }
-
     function readBoardPost(id) {
         const sendData = {}; sendData[PK] = id;
         $.ajax({
@@ -208,6 +192,7 @@
             success: function (map) {
                 const r = map.result || map.boardPost || map;
                 if (!r) return;
+                // 서버 데이터 기준으로 hidden boardId 세팅
                 $("#boardId").val(r.boardId || r.BOARD_ID);
                 $("#title").val(r.title || r.TITLE || "");
                 const html = r.contentHtml || r.CONTENT_HTML || '';
@@ -296,7 +281,7 @@
         const id  = $("#" + PK).val();
         const url = id ? (API_POST + "/updateBoardPostWithFiles") : (API_POST + "/insertBoardPostWithFiles");
 
-        if (!$('#boardId').val()) { alert("게시판을 선택해주세요."); $('#boardId').focus(); return; }
+        if (!$('#boardId').val()) { alert("잘못된 접근입니다. (게시판 정보 없음)"); return; }
         if ($("#title").val() === "") { alert("제목을 입력해주세요."); $("#title").focus(); return; }
         const html = editor.getHTML().trim();
         if (html === "") { alert("내용을 입력해주세요."); return; }
@@ -385,7 +370,6 @@
         if (r.me === true || r.ME === 'Y') return true;
         var uid = r.userId || r.USER_ID;
         return (window.CURRENT_USER_ID && uid && String(uid) === String(window.CURRENT_USER_ID));
-        // ↑ 서버가 me를 안 내려줘도 프론트에서 판별
     }
 
     function renderCommentList(list){
@@ -512,8 +496,8 @@
         var arr = this.serializeArray();
         $.each(arr, function () { obj[this.name] = this.value; });
         return obj;
-    }; 
-  	
+    };
+
     function formatBytes(bytes){
         if (!bytes && bytes !== 0) { return ''; }
         const units = ['B','KB','MB','GB','TB'];
@@ -521,4 +505,4 @@
         while (n >= 1024 && i < units.length - 1) { n /= 1024; i++; }
         return (Math.round(n * 10) / 10) + units[i];
     }
-</script>  
+</script>

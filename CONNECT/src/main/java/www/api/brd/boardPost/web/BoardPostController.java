@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
 import www.api.brd.boardPost.service.BoardPostService;
 import www.com.user.service.UserSessionManager;
 
@@ -19,9 +20,9 @@ public class BoardPostController {
     /**
      * 게시판 목록 조회 (기존 유지)
      */
-    @RequestMapping("/api/brd/boardPost/selectBoardPostList")
+    @PostMapping("/api/brd/boardPost/selectBoardPostList")
     @ResponseBody
-    public Map<String, Object> selectBoardPostList(@RequestBody HashMap<String, Object> map) throws Exception {
+    public Map<String, Object> selectBoardPostList(@RequestBody HashMap<String, Object> map) {
         Map<String, Object> resultMap = new HashMap<>();
         List<Map<String, Object>> result = boardPostService.selectBoardPostList(map);
         resultMap.put("msg", "성공");
@@ -30,13 +31,13 @@ public class BoardPostController {
     }
 
     /**
-     * 게시판 목록 조회 (페이징 추가)
+     * 게시판 목록 조회 (페이징)
      * body: { page:1, size:20, ...검색필터 }
      * 응답: { msg, result:[...], page:{page,size,total,totalPages,hasNext,hasPrev} }
      */
     @PostMapping("/api/brd/boardPost/selectBoardPostListPaged")
     @ResponseBody
-    public Map<String, Object> selectBoardPostListPaged(@RequestBody HashMap<String, Object> body) throws Exception {
+    public Map<String, Object> selectBoardPostListPaged(@RequestBody HashMap<String, Object> body) {
         Map<String, Object> paged = boardPostService.selectBoardPostListPaged(body);
         Map<String, Object> out = new HashMap<>();
         out.put("msg", "성공");
@@ -48,9 +49,9 @@ public class BoardPostController {
     /**
      * 게시판 단건 조회
      */
-    @RequestMapping("/api/brd/boardPost/selectBoardPostDetail")
+    @PostMapping("/api/brd/boardPost/selectBoardPostDetail")
     @ResponseBody
-    public Map<String, Object> selectBoardPostDetail(@RequestBody HashMap<String, Object> map) throws Exception {
+    public Map<String, Object> selectBoardPostDetail(@RequestBody HashMap<String, Object> map) {
         Map<String, Object> resultMap = new HashMap<>();
         Map<String, Object> result = boardPostService.selectBoardPostDetail(map);
         resultMap.put("msg", "성공");
@@ -61,9 +62,9 @@ public class BoardPostController {
     /**
      * 게시글 등록 (JSON 전송) - 기존 유지
      */
-    @RequestMapping("/api/brd/boardPost/insertBoardPost")
+    @PostMapping("/api/brd/boardPost/insertBoardPost")
     @ResponseBody
-    public Map<String, Object> insertBoardPost(@RequestBody HashMap<String, Object> map) throws Exception {
+    public Map<String, Object> insertBoardPost(@RequestBody HashMap<String, Object> map) {
         if (UserSessionManager.isUserLogined()) {
             map.put("createUser", UserSessionManager.getLoginUserVO().getEmail());
         }
@@ -76,9 +77,9 @@ public class BoardPostController {
     /**
      * 게시글 수정 (JSON 전송) - 기존 유지
      */
-    @RequestMapping("/api/brd/boardPost/updateBoardPost")
+    @PostMapping("/api/brd/boardPost/updateBoardPost")
     @ResponseBody
-    public Map<String, Object> updateBoardPost(@RequestBody HashMap<String, Object> map) throws Exception {
+    public Map<String, Object> updateBoardPost(@RequestBody HashMap<String, Object> map) {
         if (UserSessionManager.isUserLogined()) {
             map.put("updateUser", UserSessionManager.getLoginUserVO().getEmail());
         }
@@ -91,9 +92,9 @@ public class BoardPostController {
     /**
      * 게시글 삭제
      */
-    @RequestMapping("/api/brd/boardPost/deleteBoardPost")
+    @PostMapping("/api/brd/boardPost/deleteBoardPost")
     @ResponseBody
-    public Map<String, Object> deleteBoardPost(@RequestBody HashMap<String, Object> map) throws Exception {
+    public Map<String, Object> deleteBoardPost(@RequestBody HashMap<String, Object> map) {
         Map<String, Object> resultMap = new HashMap<>();
         boardPostService.deleteBoardPost(map);
         resultMap.put("msg", "삭제 성공");
@@ -101,11 +102,11 @@ public class BoardPostController {
     }
 
     /**
-     * 게시글 개수
+     * 게시글 개수 (기존)
      */
-    @RequestMapping("/api/brd/boardPost/selectBoardPostListCount")
+    @PostMapping("/api/brd/boardPost/selectBoardPostListCount")
     @ResponseBody
-    public Map<String, Object> selectBoardPostListCount(@RequestBody HashMap<String, Object> map) throws Exception {
+    public Map<String, Object> selectBoardPostListCount(@RequestBody HashMap<String, Object> map) {
         Map<String, Object> resultMap = new HashMap<>();
         int count = boardPostService.selectBoardPostListCount(map);
         resultMap.put("msg", "성공");
@@ -126,7 +127,7 @@ public class BoardPostController {
     public Map<String, Object> insertBoardPostWithFiles(
             @RequestParam Map<String, String> form,
             @RequestParam(value = "files", required = false) List<MultipartFile> files
-    ) throws Exception {
+    ) {
 
         HashMap<String, Object> map = new HashMap<>(form);
         if (UserSessionManager.isUserLogined()) {
@@ -141,7 +142,7 @@ public class BoardPostController {
         Long boardIdx = boardPostService.insertBoardPostWithFiles(map, files, fileGrpId);
         out.put("msg", "등록 성공");
         out.put("boardIdx", boardIdx);
-        out.put("fileGrpId", map.get("fileGrpId")); // 서비스에서 최종 값 세팅됨
+        out.put("fileGrpId", map.get("fileGrpId")); // 서비스에서 최종 값 세팅
         return out;
     }
 
@@ -158,7 +159,7 @@ public class BoardPostController {
             @RequestParam Map<String, String> form,
             @RequestParam(value = "files", required = false) List<MultipartFile> files,
             @RequestParam(value = "deleteFileIds", required = false) String[] deleteFileIds
-    ) throws Exception {
+    ) {
 
         if (!form.containsKey("boardId")) {
             throw new IllegalArgumentException("boardId is required");

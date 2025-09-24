@@ -8,6 +8,9 @@
         <if test="grpCd != null and grpCd != ''">
             AND MG.GRP_CD = #{grpCd}
         </if>
+        <if test="keyword != null and keyword != ''">
+            AND (M.MAP_NM LIKE CONCAT('%', #{keyword}, '%') OR M.CONTENT LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
         <!-- 필요 시 추가 검색조건 작성 -->
     </sql>
 
@@ -18,6 +21,7 @@
             M.TITLE,
             M.MAP_GRP_ID,
             MG.GRP_CD,
+            MG.GRP_NM,
             M.MAP_NM,
             M.CONTENT,
             M.LAT,

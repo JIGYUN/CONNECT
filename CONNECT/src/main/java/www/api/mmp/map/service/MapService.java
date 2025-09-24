@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import www.com.pag.PagingHelper;
 import www.com.util.CommonDao;
 
 @Service
@@ -18,14 +19,14 @@ public class MapService {
     private CommonDao dao;
 
     /**
-     * 템플릿 목록 조회
+     * 템플릿 목록 조회 (비페이징)
      */
     public List<Map<String, Object>> selectMapList(Map<String, Object> paramMap) {
         return dao.list(namespace + ".selectMapList", paramMap);
     }
 
     /**
-     * 템플릿 목록 수 조회
+     * 템플릿 목록 수 조회 (기존 방식)
      */
     public int selectMapListCount(Map<String, Object> paramMap) {
         Map<String, Object> resultMap = dao.selectOne(namespace + ".selectMapListCount", paramMap);
@@ -64,5 +65,19 @@ public class MapService {
     @Transactional
     public void deleteMap(Map<String, Object> paramMap) {
         dao.delete(namespace + ".deleteMap", paramMap);
+    }
+
+    /**
+     * 템플릿 목록 조회 (페이징) - PagingHelper 표준 포맷 반환
+     * 입력 파라미터: page, size, grpCd 등
+     * 반환: { list: [...], page: {page,size,total,totalPages,hasNext,hasPrev} }
+     */
+    public Map<String, Object> selectMapListPaged(Map<String, Object> paramMap) {
+        return PagingHelper.run(
+            dao,
+            namespace + ".selectMapList",          // limit/offset 지원 목록 쿼리
+            namespace + ".selectMapListCount",  // INT 단일 컬럼 카운트 쿼리
+            paramMap
+        );
     }
 }

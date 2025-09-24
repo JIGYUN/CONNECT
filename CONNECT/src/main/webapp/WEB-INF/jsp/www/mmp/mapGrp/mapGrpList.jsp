@@ -93,20 +93,28 @@
             $card.append($meta);
 
             const $acts = $('<div/>').addClass('grp-actions');
-            $acts.append($('<button/>').addClass('btn btn-sm btn-outline-primary').text('상세').on('click', function () { goDetail(id); }));
+            $acts.append($('<button/>').addClass('btn btn-sm btn-outline-primary').text('수정').on('click', function () { goDetail(id); }));
             $acts.append(
                 $('<button/>')
                     .addClass('btn btn-sm btn-outline-secondary')
-                    .text('지도 보기')
+                    .text('상세보기')
                     .prop('disabled', !grpCd)
                     .attr('title', grpCd ? '' : 'GRP_CD가 없어 이동할 수 없습니다.')
                     .on('click', function () { goMapListByGrpCd(grpCd); })
             );
+            $acts.append(
+                    $('<button/>')
+                        .addClass('btn btn-sm btn-outline-secondary')
+                        .text('지도보기')
+                        .prop('disabled', !grpCd)
+                        .attr('title', grpCd ? '' : 'GRP_CD가 없어 이동할 수 없습니다.')
+                        .on('click', function () { goMapListByGrp(grpCd); })
+                );
             //$acts.append($('<button/>').addClass('btn btn-sm btn-outline-dark').text('맛집 관리').on('click', function () { goPlaceManage(id); }));
             $card.append($acts);
-
+  
             $box.append($card);
-        }  
+        }
     }
 
     function goNew() {
@@ -124,7 +132,13 @@
         if (!grpCd) { alert('GRP_CD가 없습니다.'); return; }
         location.href = '/mmp/map/mapList?grpCd=' + encodeURIComponent(grpCd);
     }
-
+    
+    // ★ grpCd로 지도 전체보기로 이동
+    function goMapListByGrp(grpCd) {
+        if (!grpCd) { alert('GRP_CD가 없습니다.'); return; }
+        location.href = '/mmp/map/map?grpCd=' + encodeURIComponent(grpCd);  
+    }
+ 
     function goPlaceManage(id) {
         if (!id) return;
         location.href = '/mmp/place/placeList?' + PK + '=' + encodeURIComponent(id);

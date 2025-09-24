@@ -4,7 +4,7 @@
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>   
 
 <head>
-    <title>KTR_OLP</title>  
+    <title>CONNECT</title>  
 
     <!-- Meta -->
     <meta charset="utf-8">
