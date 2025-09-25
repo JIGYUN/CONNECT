@@ -6,7 +6,7 @@
     <meta charset="UTF-8"/>
     <title>지도 상세</title>
 
-    <!-- Bootstrap & jQuery (뷰 전용) -->
+    <!-- Bootstrap & jQuery -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css"/>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
@@ -38,6 +38,25 @@
         #mapBox{ padding:var(--s2); }
         #kmap{ height:420px; border-radius:14px; }
         .map-actions{ display:flex; gap:10px; flex-wrap:wrap; margin-top:var(--s2); }
+
+        /* 분석 섹션 */
+        .analysis-card{ margin-top:var(--s3); padding:var(--s3); }
+        .analysis-head{ display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+        .analysis-title{ font-weight:800; font-size:18px; margin:0; }
+        .analysis-sub{ color:#6b7280; font-size:13px; }
+        .img-frame{ position:relative; overflow:hidden; border-radius:14px; border:1px solid var(--line); }
+        .img-frame img{ display:block; width:100%; height:auto; }
+        .skeleton{
+            height:360px;
+            background: linear-gradient(90deg,#f6f7f9 0%,#edf1f7 50%,#f6f7f9 100%);
+            background-size: 200% 100%;
+            animation: shimmer 1.1s infinite;
+            border-radius:14px;
+        }
+        @keyframes shimmer{ 0%{background-position:200% 0;} 100%{background-position:-200% 0;} }
+        .analysis-actions{ display:flex; gap:8px; margin-top:10px; }
+        .muted{ color:#6b7280; }
+
         .divider{ height:1px; background:var(--line); margin:var(--s3) 0; }
         .attach{ padding:var(--s2) var(--s3) var(--s3); }
         .attach h6{ font-weight:800; font-size:14px; margin:0 0 var(--s1); }
@@ -52,9 +71,7 @@
     <!-- 상단 툴바 -->
     <div class="toolbar">
         <a class="btn btn-outline-secondary" href="/mmp/map/mapList<c:if test='${not empty param.grpCd}'>?grpCd=${param.grpCd}</c:if>">목록</a>
-        <c:if test="${not empty param.mapId}">
-            <a class="btn btn-outline-primary" href="/mmp/map/mapModify?mapId=${param.mapId}">수정</a>
-        </c:if>
+        <c:if test="${not empty param.mapId}"><a class="btn btn-outline-primary" href="/mmp/map/mapModify?mapId=${param.mapId}">수정</a></c:if>
         <button class="btn btn-outline-dark" type="button" onclick="copyUrl()">링크복사</button>
         <div class="ml-auto"></div>
     </div>
@@ -70,22 +87,10 @@
     <div class="grid">
         <!-- 좌: 정보 -->
         <div class="card info-card">
-            <div class="info-row">
-                <div class="info-label">표시명</div>
-                <div id="mapNm" class="info-value">—</div>
-            </div>
-            <div class="info-row">
-                <div class="info-label">주소</div>
-                <div id="addr" class="info-value">—</div>
-            </div>
-            <div class="info-row">
-                <div class="info-label">좌표</div>
-                <div id="coord" class="info-value">—</div>
-            </div>
-            <div class="info-row">
-                <div class="info-label">메모</div>
-                <div id="memo" class="info-value text-break">—</div>
-            </div>
+            <div class="info-row"><div class="info-label">표시명</div><div id="mapNm" class="info-value">—</div></div>
+            <div class="info-row"><div class="info-label">주소</div><div id="addr" class="info-value">—</div></div>
+            <div class="info-row"><div class="info-label">좌표</div><div id="coord" class="info-value">—</div></div>
+            <div class="info-row"><div class="info-label">메모</div><div id="memo" class="info-value text-break">—</div></div>
         </div>
 
         <!-- 우: 지도 -->
@@ -106,14 +111,45 @@
         <ul id="attachList"></ul>
     </div>
 
+    <!-- 댓글 분석(시연용 이미지) -->
+    <div class="card analysis-card" id="analysisCard">
+        <div class="analysis-head">
+            <h3 class="analysis-title mb-0">댓글 분석</h3>
+            <div class="analysis-sub">파이썬 모델 결과(시연) · 분포(SCORE)</div>
+        </div>
+
+        <div class="img-frame">
+            <div id="distSkeleton" class="skeleton"></div>
+            <img id="distImg" src="" alt="분석 이미지" style="display:none;"/>
+        </div>
+    </div>     
+
     <!-- 숨김 파라미터 -->
-    <input type="hidden" id="mapId" value="${param.mapId}"/>
+    <input type="hidden" id="mapId" value="${param.mapId}"/> 
     <input type="hidden" id="grpCd" value="${param.grpCd}"/>
 </div>
+
+<!-- 라이트박스(부트스트랩 모달) -->
+<div class="modal fade" id="imgModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <div class="modal-content" style="background:#0b1020;">
+      <div class="modal-body p-0">
+        <img id="imgModalPic" src="" class="img-fluid" alt="분석 이미지 확대" />
+      </div>
+      <div class="modal-footer py-2">
+        <button type="button" class="btn btn-light btn-sm" data-dismiss="modal">닫기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bootstrap JS (모달용) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
 const API = '/api/mmp/map';
 const FILE_API = { list:'/api/com/file/list', download: id => '/api/com/file/download/' + id };
+const DIST_IMG_PATH = '/static/assets/img/dist_-HMjbflpVIg.png';  
 
 function copyToClipboard(text){
     const t = document.createElement('textarea'); t.value = text; document.body.appendChild(t);
@@ -122,19 +158,17 @@ function copyToClipboard(text){
 function copyUrl(){ copyToClipboard(location.href); alert('링크가 복사되었습니다.'); }
 function fmtCoord(lat,lng){ return lat && lng ? (Number(lat).toFixed(6) + ', ' + Number(lng).toFixed(6)) : '—'; }
 function safe(r, ...keys){ for (let k of keys){ if (r && r[k] != null) return r[k]; } return ''; }
+function esc(s){ return String(s||'').replace(/[&<>"]/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c])); }
+function bytes(n){ if (n==null) return ''; const u=['B','KB','MB','GB']; let i=0,x=+n; while(x>=1024&&i<u.length-1){x/=1024;i++;} return (Math.round(x*10)/10)+u[i]; }
 
 let map, marker, infowindow;
 
 kakao.maps.load(async function(){
-    // 기본 지도
-    map = new kakao.maps.Map(document.getElementById('kmap'), {
-        center:new kakao.maps.LatLng(37.5665,126.9780), level:4
-    });
+    map = new kakao.maps.Map(document.getElementById('kmap'), { center:new kakao.maps.LatLng(37.5665,126.9780), level:4 });
     infowindow = new kakao.maps.InfoWindow({removable:false});
 
-    // 데이터 로드
     const id = $('#mapId').val();
-    if (!id){ $('#title').text('대상을 찾을 수 없습니다.'); return; }
+    if (!id){ $('#title').text('대상을 찾을 수 없습니다.'); initAnalysis(''); return; }
     await loadDetail(id);
 });
 
@@ -148,7 +182,7 @@ async function loadDetail(id){
 
         const title = safe(r, 'title','TITLE') || '지도 포인트';
         const name  = safe(r, 'mapNm','MAP_NM');
-        const addr  = safe(r, 'content','CONTENT');   // 폼에서 주소/메모로 쓰던 필드
+        const addr  = safe(r, 'content','CONTENT');   // 임시: 주소/메모로 사용하던 필드
         const lat   = Number(safe(r, 'lat','LAT'));
         const lng   = Number(safe(r, 'lng','LNG','lon','LON'));
         const created = safe(r,'createdDt','CREATED_DT');
@@ -162,30 +196,19 @@ async function loadDetail(id){
         $('#coord').text(fmtCoord(lat,lng));
         $('#memo').text(safe(r,'memo','MEMO') || '—');
 
-        // 메타
-        let meta = [];
-        if (created) meta.push('작성 ' + created);
-        if (updated) meta.push('수정 ' + updated);
+        let meta=[]; if (created) meta.push('작성 ' + created); if (updated) meta.push('수정 ' + updated);
         $('#meta').text(meta.join(' · '));
 
-        // 태그
-        const $tags = $('#tags').empty();
-        tags.forEach(t => $tags.append($('<span/>').addClass('chip').text('# ' + t)));
+        const $tags = $('#tags').empty(); tags.forEach(t => $tags.append($('<span/>').addClass('chip').text('# ' + t)));
 
-        // 지도/마커
         if (isFinite(lat) && isFinite(lng)){
             const ll = new kakao.maps.LatLng(lat, lng);
-            marker = new kakao.maps.Marker({ position: ll });
-            marker.setMap(map);
-            map.setCenter(ll);
-            map.setLevel(3);
+            marker = new kakao.maps.Marker({ position: ll }); marker.setMap(map);
+            map.setCenter(ll); map.setLevel(3);
             const iw = '<div style="padding:6px 8px;font-size:13px;"><b>'+ esc(name || title) +'</b>'
-                     + (addr ? '<div style="color:#6b7280;">'+ esc(addr) +'</div>' : '')
-                     + '</div>';
-            infowindow.setContent(iw);
-            infowindow.open(map, marker);
+                      + (addr ? '<div style="color:#6b7280;">'+ esc(addr) +'</div>' : '') + '</div>';
+            infowindow.setContent(iw); infowindow.open(map, marker);
 
-            // 액션 버튼
             $('#btnDirection').off('click').on('click', function(){
                 const url = 'https://map.kakao.com/link/to/' + encodeURIComponent(name || title) + ',' + lat + ',' + lng;
                 window.open(url, '_blank');
@@ -195,11 +218,14 @@ async function loadDetail(id){
             $('#btnCopyCoord').off('click').on('click', ()=>{ copyToClipboard(lat + ', ' + lng); alert('좌표를 복사했습니다.'); });
         }
 
-        // 첨부
         if (fileGrpId){ renderAttach(fileGrpId); }
+
+        // 분석 섹션 초기화(타이틀을 ALT에 반영)
+        initAnalysis(title);
 
     }catch(e){
         $('#title').text('상세를 불러오지 못했습니다.');
+        initAnalysis('');
     }
 }
 
@@ -225,12 +251,39 @@ function renderAttach(fileGrpId){
     });
 }
 
-function bytes(n){
-    if (n==null) return '';
-    const u=['B','KB','MB','GB']; let i=0, x=+n; while(x>=1024&&i<u.length-1){ x/=1024; i++; }
-    return (Math.round(x*10)/10)+u[i];
+/* ====== 분석 섹션 ====== */
+function initAnalysis(titleText){
+    const $img = $('#distImg');
+    const $skel = $('#distSkeleton');
+    const src = DIST_IMG_PATH + '?t=' + Date.now(); // 캐시 무시
+
+    $img
+      .attr('alt', (titleText ? (titleText + ' — ') : '') + '댓글 분석 분포 이미지')
+      .attr('title', (titleText ? (titleText + ' · ') : '') + '댓글 분석(시연)');
+
+    // 로드/에러 핸들러
+    $img.off('load error').on('load', function(){
+        $skel.hide(); $img.show();
+        $('#btnDownload').attr('href', DIST_IMG_PATH);
+        $('#imgModalPic').attr('src', DIST_IMG_PATH);
+    }).on('error', function(){
+        $skel.replaceWith(
+            '<div class="p-4 text-center text-muted" style="border:1px dashed var(--line); border-radius:14px;">'
+          + '분석 이미지를 불러오지 못했습니다. 경로 <code>' + DIST_IMG_PATH + '</code> 를 확인해 주세요.'
+          + '</div>'
+        );
+    });
+
+    // 최초 로드
+    $img.hide(); $skel.show(); $img.attr('src', src);
+
+    // 액션 버튼
+    $('#btnRefresh').off('click').on('click', function(){
+        $img.hide(); $skel.show();
+        $img.attr('src', DIST_IMG_PATH + '?t=' + Date.now());
+    });
+    $('#btnZoom').off('click').on('click', function(){ $('#imgModal').modal('show'); });
 }
-function esc(s){ return String(s||'').replace(/[&<>"]/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c])); }
 </script>
 </body>
 </html>
