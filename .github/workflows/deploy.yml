@@ -1,9 +1,13 @@
-name: CI-CD (Build & Deploy to Tomcat) - Prepatch WAR
+name: CI-CD (Build & Deploy to Tomcat)
 
 on:
   push:
     branches: ["main"]
   workflow_dispatch:
+
+env:
+  # pom.xml 이 있는 폴더 (루트가 아닌 CONNECT/ 하위)
+  PROJECT_DIR: CONNECT
 
 jobs:
   build:
@@ -11,6 +15,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Show tree (debug)
+        run: |
+          echo "CWD=$(pwd)"
+          ls -al
+          echo "---- PROJECT_DIR ----"
+          ls -al "${{ env.PROJECT_DIR }}" || true
 
       - name: Setup JDK 8
         uses: actions/setup-java@v4
@@ -20,13 +31,14 @@ jobs:
           cache: maven
 
       - name: Build (skip tests)
-        run: mvn -B -DskipTests package
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: mvn -B -DskipTests clean package
 
       - name: Upload WAR artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-war
-          path: target/*.war
+          path: ${{ env.PROJECT_DIR }}/target/*.war
 
   deploy:
     needs: build
@@ -44,45 +56,18 @@ jobs:
         run: |
           WAR=$(ls *.war | head -n1)
           echo "war_file=$WAR" >> $GITHUB_OUTPUT
-          echo "war_basename=$(basename $WAR)" >> $GITHUB_OUTPUT
-          echo "war_dir=$(pwd)" >> $GITHUB_OUTPUT
+          echo "war_basename=$(basename "$WAR")" >> $GITHUB_OUTPUT
 
-      # --- 여기서 사전 패치: WAR 안에 Config.properties 삽입 ---
-      - name: Prepare Config.properties (from secret)
-        id: cfg
-        run: |
-          mkdir -p config-patch
-          # 멀티라인 Secret을 그대로 파일로
-          printf "%s" "${{ secrets.PROD_CONFIG_PROPERTIES }}" > config-patch/Config.properties
-          # 파일 확인(로그에는 내용 출력 안 함)
-          echo "Config.properties size: $(wc -c < config-patch/Config.properties) bytes"
-
-      - name: Patch WAR with Config.properties
-        id: patch
-        run: |
-          set -e
-          WAR_IN="${{ steps.pick.outputs.war_file }}"
-          mkdir -p build/exploded
-          unzip -q "$WAR_IN" -d build/exploded
-
-          # 클래스패스 기준: /config/Config.properties  →  WEB-INF/classes/config/Config.properties
-          mkdir -p build/exploded/WEB-INF/classes/config
-          cp -f config-patch/Config.properties build/exploded/WEB-INF/classes/config/Config.properties
-
-          # 새 WAR(이름은 ROOT.war로 통일하여 배포)
-          (cd build/exploded && zip -qr ../ROOT.war .)
-          echo "patched_war=build/ROOT.war" >> $GITHUB_OUTPUT
-
-      - name: Copy WAR to server (/tmp/ROOT.war)
+      - name: Copy WAR to server (/tmp)
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
-          source: ${{ steps.patch.outputs.patched_war }}
+          source: ${{ steps.pick.outputs.war_file }}
           target: /tmp/
 
-      - name: Deploy on remote (stop -> replace -> start)
+      - name: Deploy on remote (restart tomcat)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.PROD_HOST }}
@@ -90,38 +75,30 @@ jobs:
           key: ${{ secrets.PROD_SSH_KEY }}
           script: |
             set -e
+            WAR_NAME="${{ steps.pick.outputs.war_basename }}"
             WEBAPPS="${{ secrets.PROD_TOMCAT_WEBAPPS }}"
-            SVC="${{ secrets.PROD_TOMCAT_SERVICE }}"
-            SRC="/tmp/ROOT.war"
 
-            # 백업 폴더
-            sudo mkdir -p ${WEBAPPS}/../releases
-
-            # 기존 ROOT.war 백업(있을 때만)
-            if [ -f ${WEBAPPS}/ROOT.war ]; then
+            sudo mkdir -p "${WEBAPPS}/../releases"
+            if [ -f "${WEBAPPS}/ROOT.war" ]; then
               TS=$(date +%Y%m%d%H%M%S)
-              sudo cp -f ${WEBAPPS}/ROOT.war ${WEBAPPS}/../releases/ROOT-${TS}.war || true
+              sudo cp -f "${WEBAPPS}/ROOT.war" "${WEBAPPS}/../releases/ROOT-${TS}.war" || true
             fi
 
-            # 배포
-            sudo systemctl stop "$SVC" || true
-            sudo rm -rf ${WEBAPPS}/ROOT ${WEBAPPS}/ROOT.war
-            sudo mv "$SRC" ${WEBAPPS}/ROOT.war
-            # Tomcat 실행계정에 맞게 소유자 보정(예: tomcat:tomcat)
-            if id tomcat >/dev/null 2>&1; then
-              sudo chown tomcat:tomcat ${WEBAPPS}/ROOT.war
-            fi
-            sudo systemctl start "$SVC"
+            sudo systemctl stop ${{ secrets.PROD_TOMCAT_SERVICE }} || true
+            sudo rm -rf "${WEBAPPS}/ROOT" "${WEBAPPS}/ROOT.war"
+            sudo mv "/tmp/${WAR_NAME}" "${WEBAPPS}/ROOT.war"
+            sudo chown -R tomcat:tomcat "${WEBAPPS}/ROOT.war"
+
+            sudo systemctl start ${{ secrets.PROD_TOMCAT_SERVICE }}
             sleep 5
-            sudo systemctl --no-pager status "$SVC" || true
+            sudo systemctl --no-pager status ${{ secrets.PROD_TOMCAT_SERVICE }} || true
 
       - name: Health check (HTTPS)
         run: |
           url="https://${{ secrets.PROD_DOMAIN }}/"
           for i in {1..30}; do
             code=$(curl -k -s -o /dev/null -w '%{http_code}' "$url")
-            echo "try=$i code=$code"
-            if [ "$code" = "200" ] || [ "$code" = "301" ] || [ "$code" = "302" ]; then
+            if [ "$code" = "200" ] || [ "$code" = "302" ]; then
               echo "OK ($code)"
               exit 0
             fi
