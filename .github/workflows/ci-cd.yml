@@ -1,26 +1,25 @@
-name: CI-CD (Build & Deploy to Tomcat)
+name: CI-CD (Build & Deploy to Tomcat - plain PROD_CONFIG)
 
 on:
   push:
     branches: ["main"]
   workflow_dispatch:
 
-permissions:
-  contents: read
-
-# 같은 브랜치에서 실행이 겹치면 이전 작업 취소
+# 같은 브랜치에서 동시에 돌면 앞의 실행을 취소하고 최신만 유지
 concurrency:
   group: cd-main
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 env:
-  # pom.xml 이 있는 하위 폴더명 (루트면 아래 working-directory 줄 삭제)
+  # pom.xml 이 들어있는 서브폴더명 (루트라면 비워두고 working-directory 삭제)
   PROJECT_DIR: CONNECT
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -45,7 +44,6 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-
     steps:
       - name: Download WAR
         uses: actions/download-artifact@v4
@@ -55,11 +53,10 @@ jobs:
 
       - name: Pick artifact
         id: pick
-        shell: bash
         run: |
-          WAR=$(ls -1 *.war | head -n1)
-          echo "war_file=$WAR" >> "$GITHUB_OUTPUT"
-          echo "war_basename=$(basename "$WAR")" >> "$GITHUB_OUTPUT"
+          WAR=$(ls *.war | head -n1)
+          echo "war_file=$WAR" >> $GITHUB_OUTPUT
+          echo "war_basename=$(basename "$WAR")" >> $GITHUB_OUTPUT
 
       - name: Copy WAR to server (/tmp)
         uses: appleboy/scp-action@v0.1.7
@@ -70,22 +67,7 @@ jobs:
           source: ${{ steps.pick.outputs.war_file }}
           target: /tmp/
 
-      # 선택: 외부 Config.properties 내려주기 (스크립트 내부에서 빈 값 체크)
-      - name: Put external Config.properties (optional)
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.PROD_HOST }}
-          username: ${{ secrets.PROD_USER }}
-          key: ${{ secrets.PROD_SSH_KEY }}
-          script: |
-            if [ -n "${{ secrets.PROD_CONFIG_B64 }}" ]; then
-              echo "Config.properties found in secrets, writing..."
-              echo "${{ secrets.PROD_CONFIG_B64 }}" | base64 -d > "/home/${USER}/Config.properties"
-              chmod 600 "/home/${USER}/Config.properties"
-            else
-              echo "No PROD_CONFIG_B64 provided. Skip writing Config.properties."
-            fi
-
+      # Tomcat 배포 (네가 만든 래퍼 스크립트 호출)
       - name: Deploy by sudo wrapper (restart tomcat)
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -95,17 +77,49 @@ jobs:
           script: |
             set -e
             WAR_NAME="${{ steps.pick.outputs.war_basename }}"
-            echo "Deploying /tmp/${WAR_NAME}"
+            echo "[CI] Deploying /tmp/${WAR_NAME}"
             sudo /usr/local/bin/deploy_tomcat.sh "/tmp/${WAR_NAME}"
 
+      # 배포된 ROOT에 Config.properties 덮어쓰기 (Base64 불필요, 원문 그대로)
+      - name: Place external Config.properties (plain secret)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          # 리모트에 전달할 환경 변수명을 명시해야 함
+          envs: PROD_CONFIG
+          script: |
+            set -e
+            WEBAPPS="${{ secrets.PROD_TOMCAT_WEBAPPS }}"
+            CFG_DIR="${WEBAPPS}/ROOT/WEB-INF/classes/config"
+            CFG_FILE="${CFG_DIR}/Config.properties"
+
+            echo "[CI] Waiting ROOT explode and preparing config dir..."
+            # ROOT/WEB-INF/classes 가 생길 때까지 최대 60초 대기 (Tomcat이 war를 푸는 시간 고려)
+            for i in {1..60}; do
+              if sudo test -d "${WEBAPPS}/ROOT/WEB-INF/classes"; then
+                break
+              fi
+              sleep 1
+            done
+
+            # 디렉터리 생성(없으면) + 권한 설정
+            sudo install -d -o tomcat -g tomcat -m 755 "${CFG_DIR}"
+
+            # 원문 그대로 파일에 기록 (heredoc을 'EOF' 로 인용하면 변수확장/이스케이프 없음)
+            sudo bash -c "cat > '${CFG_FILE}' <<'EOF'
+$PROD_CONFIG
+EOF"
+            sudo chown tomcat:tomcat "${CFG_FILE}"
+            sudo chmod 600 "${CFG_FILE}"
+            echo "[CI] Config.properties updated at ${CFG_FILE}"
+
       - name: Health check (HTTPS)
-        shell: bash
         run: |
           url="https://${{ secrets.PROD_DOMAIN }}/"
-          echo "Health check => $url"
           for i in {1..30}; do
             code=$(curl -k -s -o /dev/null -w '%{http_code}' "$url")
-            echo "try $i => $code"
             if [ "$code" = "200" ] || [ "$code" = "302" ]; then
               echo "OK ($code)"
               exit 0
