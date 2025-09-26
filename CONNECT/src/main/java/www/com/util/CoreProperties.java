@@ -44,52 +44,44 @@ public class CoreProperties {
     
     protected static MessageSourceAccessor messageSourceAccessor = null;
     
-	/**
-	 * 인자로 주어진 문자열을 Key값으로 하는 프로퍼티 값을 반환한다(Globals.java 전용)
-	 * @param keyName String
-	 * @return String
-	 */
-	public static String getProperty(String keyName){
-		String value = ERR_CODE;
-		value="99";
-		debug(GLOBALS_PROPERTIES_FILE + " : " + keyName);
-		FileInputStream fis = null;
-		
-		try{
+    private static InputStream openConfigStream() throws IOException {
+        // 1) 환경변수/시스템 프로퍼티
+        String hint = System.getenv("CONNECT_CONFIG");
+        if (hint == null || hint.isEmpty()) {
+            hint = System.getProperty("connect.config");
+        }
+        if (hint != null && !hint.isEmpty()) {
+            try {
+                // URL 형식(file:/..., file:///C:/...) 먼저 시도
+                return new java.io.BufferedInputStream(new java.net.URL(hint).openStream());
+            } catch (Exception ignore) {
+                // 일반 파일 경로도 허용(C:\..., /opt/...)
+                return new java.io.BufferedInputStream(new java.io.FileInputStream(hint));
+            }
+        }
+        // 2) 사용자 홈 fallback (기존 로직 유지)
+        java.io.File home = new java.io.File(System.getProperty("user.home"), "Config.properties");
+        if (home.exists()) {
+            return new java.io.BufferedInputStream(new java.io.FileInputStream(home));
+        }
+        // 3) classpath fallback (기존)
+        java.io.InputStream cp = CoreProperties.class.getResourceAsStream("/config/Config.properties");
+        return (cp != null) ? new java.io.BufferedInputStream(cp) : null;
+    }
 
-			Properties props = new Properties();
-			//fis  = new FileInputStream(GLOBALS_PROPERTIES_FILE);
-			// 클래스 경로에서 직접 읽어온다.
-			props.load(new java.io.BufferedInputStream(CoreProperties.class.getResourceAsStream("/config/Config.properties")));
-			//value = props.getProperty(keyName).trim(); //시큐어코딩대상
-			  
-			//2015.05.11 시큐어코딩처리
-			if (props != null) {
-				value = props.getProperty(keyName).trim();
-			}
-			
-			//value = messageSourceAccessor.getMessage(keyName);
-		}catch(FileNotFoundException fne){
-			//debug(fne);
-			logger.warn("@Exception "+fne.getMessage());
-		}catch(IOException ioe){
-			//debug(ioe);
-			logger.warn("@Exception "+ioe.getMessage());
-		}catch(Exception e){
-			//debug(e);
-			logger.warn("@Exception "+e.getMessage());
-		}finally{
-			try {
-				if (fis != null) fis.close();
-			} catch (Exception ex) {
-				logger.warn("예외 발생");
-				
-			}
-			
-		}
-		
-		return value;
-	}
+    public static String getProperty(String keyName){
+        String value = ERR_CODE;
+        try (InputStream in = openConfigStream()) {
+            if (in == null) return value;
+            Properties props = new Properties();
+            props.load(in);
+            String v = props.getProperty(keyName);
+            return (v != null) ? v.trim() : value;
+        } catch (Exception e) {
+            logger.warn("@Exception " + e.getMessage());
+            return value;
+        }
+    }
 	
 	/**
 	 * properties를 가지고 와서 값이 없다면 defaultvalue 를 가지고 옵시다.

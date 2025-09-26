@@ -47,6 +47,12 @@
 	<bean id="antPathMater" class="org.springframework.util.AntPathMatcher" />
 	<bean id="defaultTraceHandler" class="egovframework.rte.fdl.cmmn.trace.handler.DefaultTraceHandler" />
 	
-		<!-- 프로퍼티 설정 -->
-	<util:properties id="ConfigProperties" location="classpath:config/Config.properties" /> 
+	<!-- 환경변수/시스템프로퍼티 해석 활성화 -->
+	<context:property-placeholder ignore-unresolvable="true" system-properties-mode="OVERRIDE"/>
+	
+	<!-- 기존 -->
+	<!-- <util:properties id="ConfigProperties" location="classpath:config/Config.properties"/> -->
+	
+	<!-- 변경: 환경변수 CONNECT_CONFIG 우선, 없으면 classpath fallback -->
+	<util:properties id="ConfigProperties" location="${CONNECT_CONFIG:classpath:config/Config.properties}"/>
 </beans>
