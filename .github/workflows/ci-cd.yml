@@ -8,6 +8,7 @@ on:
 permissions:
   contents: read
 
+# 프로젝트의 pom.xml 이 있는 하위 폴더명
 env:
   PROJECT_DIR: CONNECT
 
@@ -48,9 +49,11 @@ jobs:
       - name: Pick artifact
         id: pick
         run: |
+          set -e
           WAR=$(ls *.war | head -n1)
           echo "war_file=$WAR" >> $GITHUB_OUTPUT
           echo "war_basename=$(basename "$WAR")" >> $GITHUB_OUTPUT
+          echo "Picked WAR: $WAR"
 
       - name: Copy WAR to server (/tmp)
         uses: appleboy/scp-action@v0.1.7
@@ -61,17 +64,23 @@ jobs:
           source: ${{ steps.pick.outputs.war_file }}
           target: /tmp/
 
-      # (선택) 서버에 외부 Config.properties 내려주기
+      # 선택: 외부 Config.properties 내려주기 (env로 바인딩 → if에서 env 참조)
       - name: Put external Config.properties (optional)
-        if: ${{ secrets.PROD_CONFIG_B64 != '' }}
+        if: ${{ env.PROD_CONFIG_B64 != '' }}
+        env:
+          PROD_CONFIG_B64: ${{ secrets.PROD_CONFIG_B64 }}
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
           script: |
-            echo "${{ secrets.PROD_CONFIG_B64 }}" | base64 -d > /home/${USER}/Config.properties
-            chmod 600 /home/${USER}/Config.properties
+            set -e
+            if [ -n "$PROD_CONFIG_B64" ]; then
+              echo "$PROD_CONFIG_B64" | base64 -d > /home/${USER}/Config.properties
+              chmod 600 /home/${USER}/Config.properties
+              echo "[Config.properties] delivered to /home/${USER}/Config.properties"
+            fi
 
       - name: Deploy by sudo wrapper (restart tomcat)
         uses: appleboy/ssh-action@v1.0.3
@@ -82,17 +91,21 @@ jobs:
           script: |
             set -e
             WAR_NAME="${{ steps.pick.outputs.war_basename }}"
+            echo "Deploying /tmp/${WAR_NAME}"
             sudo /usr/local/bin/deploy_tomcat.sh "/tmp/${WAR_NAME}"
 
       - name: Health check (HTTPS)
         run: |
           url="https://${{ secrets.PROD_DOMAIN }}/"
+          echo "Health check: $url"
           for i in {1..30}; do
             code=$(curl -k -s -o /dev/null -w '%{http_code}' "$url")
+            echo "try #$i => $code"
             if [ "$code" = "200" ] || [ "$code" = "302" ]; then
               echo "OK ($code)"
               exit 0
             fi
             sleep 2
           done
-          echo "Health check failed"; exit 1
+          echo "Health check failed"
+          exit 1
