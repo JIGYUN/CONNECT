@@ -1,0 +1,37 @@
+name: CI (Maven Build)
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '11' # 프로젝트 JDK에 맞춰 8/11/17 등으로 변경
+
+      - name: Cache Maven
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: maven-${{ runner.os }}-
+
+      - name: Build with Maven (tests ON)
+        run: mvn -B -U clean verify
+
+      - name: Upload WAR artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: war
+          path: target/*.war
