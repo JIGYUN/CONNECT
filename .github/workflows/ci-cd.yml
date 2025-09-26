@@ -1,19 +1,15 @@
-name: CI-CD (Build & Deploy to Tomcat)
+name: CI-CD (Build & Deploy to Tomcat - deploy user)
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch:
-
-concurrency:
-  group: cd-main
-  cancel-in-progress: true
 
 permissions:
   contents: read
 
 env:
-  PROJECT_DIR: CONNECT   # pom.xml 이 있는 하위 폴더
+  PROJECT_DIR: CONNECT
 
 jobs:
   build:
@@ -26,12 +22,12 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '8'
+          java-version: "8"
           cache: maven
 
-      # 하위폴더의 pom.xml 을 지정해서 빌드
       - name: Build (skip tests)
-        run: mvn -B -DskipTests -f "${{ env.PROJECT_DIR }}/pom.xml" clean package
+        working-directory: ${{ env.PROJECT_DIR }}
+        run: mvn -B -DskipTests clean package
 
       - name: Upload WAR artifact
         uses: actions/upload-artifact@v4
@@ -42,7 +38,6 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-
     steps:
       - name: Download WAR
         uses: actions/download-artifact@v4
@@ -52,110 +47,52 @@ jobs:
 
       - name: Pick artifact
         id: pick
-        shell: bash
         run: |
-          set -e
-          WAR=$(ls -1 *.war | head -n1)
-          echo "war_file=$WAR" >> "$GITHUB_OUTPUT"
-          echo "war_basename=$(basename "$WAR")" >> "$GITHUB_OUTPUT"
-
-      # ===== (옵션) Config.properties 배포 =====
-      # secrets를 if에서 직접 쓰지 않고 env로 전달 후, 쉘에서 빈값 검사
-      - name: (opt) Prepare Config.properties
-        env:
-          CONF_B64: ${{ secrets.PROD_CONFIG_B64 }}
-        run: |
-          if [ -z "${CONF_B64}" ]; then
-            echo "No PROD_CONFIG_B64 set -> skip creating Config.properties"
-            exit 0
-          fi
-          echo "${CONF_B64}" | base64 -d > Config.properties
-          ls -al Config.properties
-
-      - name: (opt) Copy Config.properties to server
-        if: ${{ hashFiles('Config.properties') != '' }}
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host:     ${{ secrets.PROD_HOST }}
-          username: ${{ secrets.PROD_USER }}
-          key:      ${{ secrets.PROD_SSH_KEY }}
-          source:   Config.properties
-          target:   /tmp/
-
-      - name: (opt) Move Config.properties into place
-        if: ${{ hashFiles('Config.properties') != '' }}
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host:     ${{ secrets.PROD_HOST }}
-          username: ${{ secrets.PROD_USER }}
-          key:      ${{ secrets.PROD_SSH_KEY }}
-          script: |
-            set -e
-            TARGET="${{ secrets.PROD_CONFIG_TARGET }}"
-            if [ -z "${TARGET}" ]; then
-              echo "PROD_CONFIG_TARGET not set -> skip moving"
-              exit 0
-            fi
-            sudo mkdir -p "$(dirname "${TARGET}")"
-            sudo mv /tmp/Config.properties "${TARGET}"
-            sudo chown tomcat:tomcat "${TARGET}"
-            sudo chmod 600 "${TARGET}"
-      # ===== (옵션) 끝 =====
+          WAR=$(ls *.war | head -n1)
+          echo "war_file=$WAR" >> $GITHUB_OUTPUT
+          echo "war_basename=$(basename "$WAR")" >> $GITHUB_OUTPUT
 
       - name: Copy WAR to server (/tmp)
         uses: appleboy/scp-action@v0.1.7
         with:
-          host:     ${{ secrets.PROD_HOST }}
+          host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USER }}
-          key:      ${{ secrets.PROD_SSH_KEY }}
-          source:   ${{ steps.pick.outputs.war_file }}
-          target:   /tmp/
+          key: ${{ secrets.PROD_SSH_KEY }}
+          source: ${{ steps.pick.outputs.war_file }}
+          target: /tmp/
 
-      - name: Deploy on remote (restart tomcat)
+      # (선택) 서버에 외부 Config.properties 내려주기
+      - name: Put external Config.properties (optional)
+        if: ${{ secrets.PROD_CONFIG_B64 != '' }}
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host:     ${{ secrets.PROD_HOST }}
+          host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USER }}
-          key:      ${{ secrets.PROD_SSH_KEY }}
+          key: ${{ secrets.PROD_SSH_KEY }}
           script: |
-            set -euo pipefail
+            echo "${{ secrets.PROD_CONFIG_B64 }}" | base64 -d > /home/${USER}/Config.properties
+            chmod 600 /home/${USER}/Config.properties
+
+      - name: Deploy by sudo wrapper (restart tomcat)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            set -e
             WAR_NAME="${{ steps.pick.outputs.war_basename }}"
-            WEBAPPS="${{ secrets.PROD_TOMCAT_WEBAPPS }}"
-            SERVICE="${{ secrets.PROD_TOMCAT_SERVICE }}"
-
-            sudo mkdir -p "${WEBAPPS}/../releases"
-            if [ -f "${WEBAPPS}/ROOT.war" ]; then
-              TS=$(date +%Y%m%d%H%M%S)
-              sudo cp -f "${WEBAPPS}/ROOT.war" "${WEBAPPS}/../releases/ROOT-${TS}.war" || true
-            fi
-
-            sudo systemctl stop "$SERVICE" || true
-            sudo rm -rf "${WEBAPPS}/ROOT" "${WEBAPPS}/ROOT.war"
-            sudo mv "/tmp/${WAR_NAME}" "${WEBAPPS}/ROOT.war"
-            sudo chown tomcat:tomcat "${WEBAPPS}/ROOT.war"
-            sudo systemctl start "$SERVICE"
-
-            # 8080 포트가 뜰 때까지 기다림(최대 30초)
-            for i in {1..30}; do
-              if sudo ss -ltnp | grep -q ":8080"; then
-                echo "Tomcat is listening on 8080"
-                break
-              fi
-              sleep 1
-            done
-            sudo systemctl --no-pager status "$SERVICE" || true
+            sudo /usr/local/bin/deploy_tomcat.sh "/tmp/${WAR_NAME}"
 
       - name: Health check (HTTPS)
-        shell: bash
         run: |
           url="https://${{ secrets.PROD_DOMAIN }}/"
           for i in {1..30}; do
             code=$(curl -k -s -o /dev/null -w '%{http_code}' "$url")
             if [ "$code" = "200" ] || [ "$code" = "302" ]; then
-              echo "Health OK ($code)"
+              echo "OK ($code)"
               exit 0
             fi
             sleep 2
           done
-          echo "Health check failed"
-          exit 1
+          echo "Health check failed"; exit 1
