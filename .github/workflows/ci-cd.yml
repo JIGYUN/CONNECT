@@ -1,0 +1,149 @@
+name: CI-CD (Build & Deploy to Tomcat)
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+# 같은 브랜치에서 여러 배포가 겹치면 먼저 돌던 작업을 취소
+concurrency:
+  group: cd-main
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  PROJECT_DIR: CONNECT    # <-- pom.xml 이 있는 하위 폴더명
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 8
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+          cache: maven
+
+      # 루트가 아니라 CONNECT 폴더의 pom.xml 을 빌드
+      - name: Build (skip tests)
+        run: mvn -B -DskipTests -f "${{ env.PROJECT_DIR }}/pom.xml" clean package
+
+      - name: Upload WAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-war
+          path: ${{ env.PROJECT_DIR }}/target/*.war
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download WAR
+        uses: actions/download-artifact@v4
+        with:
+          name: app-war
+          path: .
+
+      - name: Pick artifact
+        id: pick
+        shell: bash
+        run: |
+          set -e
+          WAR=$(ls -1 *.war | head -n1)
+          echo "war_file=$WAR" >> "$GITHUB_OUTPUT"
+          echo "war_basename=$(basename "$WAR")" >> "$GITHUB_OUTPUT"
+
+      # (선택) 외부 Config.properties 를 비밀값으로 넣어 덮어쓰기 하고 싶을 때
+      # - GitHub Secret: PROD_CONFIG_B64  (Config.properties를 base64 로 인코딩해 저장)
+      # - GitHub Secret: PROD_CONFIG_TARGET  (/opt/tomcat/conf/Config.properties 와 같이 절대경로)
+      - name: (opt) Prepare Config.properties
+        if: ${{ secrets.PROD_CONFIG_B64 != '' }}
+        run: |
+          echo "${{ secrets.PROD_CONFIG_B64 }}" | base64 -d > Config.properties
+
+      - name: (opt) Copy Config.properties to server
+        if: ${{ secrets.PROD_CONFIG_B64 != '' }}
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host:     ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key:      ${{ secrets.PROD_SSH_KEY }}
+          source:   Config.properties
+          target:   /tmp/
+
+      - name: (opt) Move Config.properties into place
+        if: ${{ secrets.PROD_CONFIG_B64 != '' }}
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host:     ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key:      ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            set -e
+            sudo mkdir -p "$(dirname '${{ secrets.PROD_CONFIG_TARGET }}')"
+            sudo mv /tmp/Config.properties '${{ secrets.PROD_CONFIG_TARGET }}'
+            sudo chown tomcat:tomcat '${{ secrets.PROD_CONFIG_TARGET }}'
+            sudo chmod 600 '${{ secrets.PROD_CONFIG_TARGET }}'
+
+      - name: Copy WAR to server (/tmp)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host:     ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key:      ${{ secrets.PROD_SSH_KEY }}
+          source:   ${{ steps.pick.outputs.war_file }}
+          target:   /tmp/
+
+      - name: Deploy on remote (restart tomcat)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host:     ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key:      ${{ secrets.PROD_SSH_KEY }}
+          script: |
+            set -euo pipefail
+            WAR_NAME="${{ steps.pick.outputs.war_basename }}"
+            WEBAPPS="${{ secrets.PROD_TOMCAT_WEBAPPS }}"
+            SERVICE="${{ secrets.PROD_TOMCAT_SERVICE }}"
+
+            # 이전 버전 백업 (선택)
+            sudo mkdir -p "${WEBAPPS}/../releases"
+            if [ -f "${WEBAPPS}/ROOT.war" ]; then
+              TS=$(date +%Y%m%d%H%M%S)
+              sudo cp -f "${WEBAPPS}/ROOT.war" "${WEBAPPS}/../releases/ROOT-${TS}.war" || true
+            fi
+
+            # 안전 배포
+            sudo systemctl stop "$SERVICE" || true
+            sudo rm -rf "${WEBAPPS}/ROOT" "${WEBAPPS}/ROOT.war"
+            sudo mv "/tmp/${WAR_NAME}" "${WEBAPPS}/ROOT.war"
+            sudo chown tomcat:tomcat "${WEBAPPS}/ROOT.war"
+            sudo systemctl start "$SERVICE"
+
+            # 포트가 떠오를 시간 대기(최대 30초)
+            for i in {1..30}; do
+              sudo ss -ltnp | grep -q ":8080" && break || sleep 1
+            done
+            sudo systemctl --no-pager status "$SERVICE" || true
+
+      - name: Health check (HTTPS)
+        shell: bash
+        run: |
+          url="https://${{ secrets.PROD_DOMAIN }}/"
+          for i in {1..30}; do
+            code=$(curl -k -s -o /dev/null -w '%{http_code}' "$url")
+            if [ "$code" = "200" ] || [ "$code" = "302" ]; then
+              echo "Health OK ($code)"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Health check failed"
+          exit 1
