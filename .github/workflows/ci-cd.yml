@@ -1,4 +1,4 @@
-name: CI-CD (Build & Deploy to Tomcat - patch WAR with Config.properties)
+name: CI-CD (Build & Deploy to Tomcat - A plan)
 
 on:
   push:
@@ -8,12 +8,18 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: cd-main
+  cancel-in-progress: true
+
 env:
-  PROJECT_DIR: CONNECT            # pom.xml 있는 하위 폴더명 (루트면 빈값으로)
+  # 저장소 내에서 pom.xml 이 있는 하위 디렉토리명 (루트면 빈 값으로 두고 아래 working-directory 제거)
+  PROJECT_DIR: CONNECT
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -29,48 +35,18 @@ jobs:
         working-directory: ${{ env.PROJECT_DIR }}
         run: mvn -B -DskipTests clean package
 
-      # ───────────────────────────────────────────────
-      # ① WAR 안에 Config.properties를 주입(패치)
-      #    → CoreProperties가 classpath:/config/Config.properties 를 읽으므로
-      #      WAR 내부 경로는 WEB-INF/classes/config/Config.properties 이어야 함
-      # ───────────────────────────────────────────────
-      - name: Patch WAR with Config.properties from secret
-        working-directory: ${{ env.PROJECT_DIR }}/target
-        run: |
-          set -e
-          WAR_ORIG=$(ls *.war | head -n1)
-          echo "ORIG WAR: ${WAR_ORIG}"
-
-          mkdir -p warwork
-          cd warwork
-
-          # WAR 풀기
-          jar xf "../${WAR_ORIG}"
-
-          # 목적 경로 만들고 시크릿 값으로 파일 생성
-          mkdir -p WEB-INF/classes/config
-          printf '%s\n' "${{ secrets.PROD_CONFIG }}" > WEB-INF/classes/config/Config.properties
-
-          # 패치된 WAR 만들기
-          WAR_PATCHED="../${WAR_ORIG%.war}-patched.war"
-          jar cf "${WAR_PATCHED}" .
-
-          # 검증 (Config.properties 들어갔는지)
-          echo "Verify entries:"
-          jar tf "${WAR_PATCHED}" | grep -i 'WEB-INF/classes/config/Config.properties' || (echo "Config not in WAR!" && exit 1)
-
-          echo "PATCHED WAR: ${WAR_PATCHED}"
-
-      - name: Upload patched WAR
+      - name: Upload WAR artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-war
-          path: ${{ env.PROJECT_DIR }}/target/*-patched.war
+          path: ${{ env.PROJECT_DIR }}/target/*.war
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
+
     steps:
+      # --- 아티팩트 다운로드 & 파일명 추출 ---
       - name: Download WAR
         uses: actions/download-artifact@v4
         with:
@@ -79,11 +55,15 @@ jobs:
 
       - name: Pick artifact
         id: pick
+        shell: bash
         run: |
-          WAR=$(ls *-patched.war | head -n1)
+          set -e
+          WAR=$(ls -1 *.war | head -n1)
           echo "war_file=$WAR" >> $GITHUB_OUTPUT
           echo "war_basename=$(basename "$WAR")" >> $GITHUB_OUTPUT
+          echo "Picked WAR: $WAR"
 
+      # --- WAR 파일을 서버 /tmp 로 업로드 ---
       - name: Copy WAR to server (/tmp)
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -93,57 +73,64 @@ jobs:
           source: ${{ steps.pick.outputs.war_file }}
           target: /tmp/
 
-      # ───────────────────────────────────────────────
-      # ② 서버에서 WAR 폭파 배포 (webapps에는 디렉터리만 남김)
-      # ───────────────────────────────────────────────
-      - name: Deploy exploded directory (no ROOT.war)
+      # --- (선택) Secret에서 Config 생성해서 /tmp 로 업로드 ---
+      # PROD_CONFIG 시크릿이 "비어있지 않으면" 실행됩니다.
+      - name: Create local Config file from secret (optional)
+        if: ${{ secrets.PROD_CONFIG != '' }}
+        shell: bash
+        run: |
+          set -e
+          printf '%s' "${{ secrets.PROD_CONFIG }}" > config-real.properties
+
+      - name: Copy Config to server (/tmp) (optional)
+        if: ${{ secrets.PROD_CONFIG != '' }}
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          source: config-real.properties
+          target: /tmp/
+
+      # --- 래퍼 스크립트 한 번만 sudo 로 호출 ---
+      - name: Deploy via wrapper (sudo deploy_tomcat.sh)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
           script: |
-            set -euo pipefail
+            set -e
+            WAR="/tmp/${{ steps.pick.outputs.war_basename }}"
+            CFG="/tmp/config-real.properties"
+            echo "[CI] calling wrapper: $WAR (cfg: $CFG if exists)"
+            if [ -f "$CFG" ]; then
+              sudo /usr/local/bin/deploy_tomcat.sh "$WAR" "$CFG"
+            else
+              sudo /usr/local/bin/deploy_tomcat.sh "$WAR"
+            fi
 
-            WEBAPPS="/opt/tomcat/webapps"
-            SERVICE="tomcat"
-            WAR_NAME="${{ steps.pick.outputs.war_basename }}"
-            WAR_SRC="/tmp/${WAR_NAME}"
-            ROOT_DIR="${WEBAPPS}/ROOT"
-            ROOT_WAR="${WEBAPPS}/ROOT.war"
-
-            echo "[DEPLOY] stop tomcat"
-            sudo systemctl stop "${SERVICE}" || true
-
-            echo "[DEPLOY] clean ROOT & ROOT.war"
-            sudo rm -rf "${ROOT_DIR}" "${ROOT_WAR}"
-
-            echo "[DEPLOY] unzip to ${ROOT_DIR}"
-            sudo mkdir -p "${ROOT_DIR}"
-            sudo unzip -q -o "${WAR_SRC}" -d "${ROOT_DIR}"
-
-            # (선택) 여기서도 다시 한 번 확인
-            echo "[DEPLOY] check Config.properties present"
-            sudo bash -c 'ls -l "${0}" "${1}" 2>/dev/null || true' "${ROOT_DIR}/WEB-INF/classes/config/Config.properties" "${ROOT_DIR}/WEB-INF/classes/Config.properties"
-            sudo bash -c 'grep -n "^[^#].*" -m 5 "${0}" 2>/dev/null || true' "${ROOT_DIR}/WEB-INF/classes/config/Config.properties"
-
-            echo "[DEPLOY] chown"
-            sudo chown -R tomcat:tomcat "${ROOT_DIR}"
-
-            echo "[DEPLOY] start tomcat"
-            sudo systemctl start "${SERVICE}"
-            sleep 5
-            sudo systemctl --no-pager status "${SERVICE}" || true
-
+      # --- 헬스체크 (도메인 필수) ---
       - name: Health check (HTTPS)
+        env:
+          DOMAIN: ${{ secrets.PROD_DOMAIN }}
+        shell: bash
         run: |
-          url="https://${{ secrets.PROD_DOMAIN }}/"
+          set -e
+          if [ -z "$DOMAIN" ]; then
+            echo "[CI] PROD_DOMAIN secret is empty. Skip health check."
+            exit 0
+          fi
+          url="https://${DOMAIN}/"
+          echo "[CI] Health check: $url"
           for i in {1..30}; do
-            code=$(curl -k -s -o /dev/null -w '%{http_code}' "$url")
+            code=$(curl -k -s -o /dev/null -w '%{http_code}' "$url" || true)
+            echo "try#$i -> $code"
             if [ "$code" = "200" ] || [ "$code" = "302" ]; then
               echo "OK ($code)"
               exit 0
             fi
             sleep 2
           done
-          echo "Health check failed"; exit 1
+          echo "Health check failed"
+          exit 1
