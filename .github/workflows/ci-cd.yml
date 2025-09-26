@@ -8,13 +8,13 @@ on:
 permissions:
   contents: read
 
-# 같은 브랜치에서 이전 실행이 남아있으면 취소하고 최신 것만 수행
+# 같은 브랜치에서 실행이 겹치면 이전 작업 취소
 concurrency:
   group: cd-main
   cancel-in-progress: true
 
 env:
-  # pom.xml 이 있는 하위 폴더명 (루트면 빈 값으로 두고 아래 working-directory 를 지우세요)
+  # pom.xml 이 있는 하위 폴더명 (루트면 아래 working-directory 줄 삭제)
   PROJECT_DIR: CONNECT
 
 jobs:
@@ -70,18 +70,21 @@ jobs:
           source: ${{ steps.pick.outputs.war_file }}
           target: /tmp/
 
-      # (선택) 외부 Config.properties 내려주기
-      # 저장한 비밀값이 있을 때만 동작합니다.
+      # 선택: 외부 Config.properties 내려주기 (스크립트 내부에서 빈 값 체크)
       - name: Put external Config.properties (optional)
-        if: ${{ secrets.PROD_CONFIG_B64 != '' }}
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
           script: |
-            echo "${{ secrets.PROD_CONFIG_B64 }}" | base64 -d > "/home/${USER}/Config.properties"
-            chmod 600 "/home/${USER}/Config.properties"
+            if [ -n "${{ secrets.PROD_CONFIG_B64 }}" ]; then
+              echo "Config.properties found in secrets, writing..."
+              echo "${{ secrets.PROD_CONFIG_B64 }}" | base64 -d > "/home/${USER}/Config.properties"
+              chmod 600 "/home/${USER}/Config.properties"
+            else
+              echo "No PROD_CONFIG_B64 provided. Skip writing Config.properties."
+            fi
 
       - name: Deploy by sudo wrapper (restart tomcat)
         uses: appleboy/ssh-action@v1.0.3
@@ -93,7 +96,6 @@ jobs:
             set -e
             WAR_NAME="${{ steps.pick.outputs.war_basename }}"
             echo "Deploying /tmp/${WAR_NAME}"
-            ls -l /usr/local/bin/deploy_tomcat.sh
             sudo /usr/local/bin/deploy_tomcat.sh "/tmp/${WAR_NAME}"
 
       - name: Health check (HTTPS)
