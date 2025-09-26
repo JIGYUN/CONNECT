@@ -6,7 +6,6 @@ on:
   workflow_dispatch:
 
 env:
-  # pom.xml 이 있는 폴더 (루트가 아닌 CONNECT/ 하위)
   PROJECT_DIR: CONNECT
 
 jobs:
@@ -43,7 +42,6 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    environment: production
     steps:
       - name: Download WAR
         uses: actions/download-artifact@v4
