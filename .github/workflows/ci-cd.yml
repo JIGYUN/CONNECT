@@ -5,7 +5,6 @@ on:
     branches: ["main"]
   workflow_dispatch:
 
-# 같은 브랜치에서 동시에 돌면 앞의 실행을 취소하고 최신만 유지
 concurrency:
   group: cd-main
   cancel-in-progress: true
@@ -14,7 +13,6 @@ permissions:
   contents: read
 
 env:
-  # pom.xml 이 들어있는 서브폴더명 (루트라면 비워두고 working-directory 삭제)
   PROJECT_DIR: CONNECT
 
 jobs:
@@ -67,7 +65,6 @@ jobs:
           source: ${{ steps.pick.outputs.war_file }}
           target: /tmp/
 
-      # Tomcat 배포 (네가 만든 래퍼 스크립트 호출)
       - name: Deploy by sudo wrapper (restart tomcat)
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -80,14 +77,13 @@ jobs:
             echo "[CI] Deploying /tmp/${WAR_NAME}"
             sudo /usr/local/bin/deploy_tomcat.sh "/tmp/${WAR_NAME}"
 
-      # 배포된 ROOT에 Config.properties 덮어쓰기 (Base64 불필요, 원문 그대로)
+      # ---- 요기 수정: heredoc 제거하고 printf|tee 로 안전하게 기록 ----
       - name: Place external Config.properties (plain secret)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
-          # 리모트에 전달할 환경 변수명을 명시해야 함
           envs: PROD_CONFIG
           script: |
             set -e
@@ -95,8 +91,7 @@ jobs:
             CFG_DIR="${WEBAPPS}/ROOT/WEB-INF/classes/config"
             CFG_FILE="${CFG_DIR}/Config.properties"
 
-            echo "[CI] Waiting ROOT explode and preparing config dir..."
-            # ROOT/WEB-INF/classes 가 생길 때까지 최대 60초 대기 (Tomcat이 war를 푸는 시간 고려)
+            echo "[CI] Waiting ROOT to explode..."
             for i in {1..60}; do
               if sudo test -d "${WEBAPPS}/ROOT/WEB-INF/classes"; then
                 break
@@ -104,13 +99,12 @@ jobs:
               sleep 1
             done
 
-            # 디렉터리 생성(없으면) + 권한 설정
+            # 디렉터리 생성 + 권한
             sudo install -d -o tomcat -g tomcat -m 755 "${CFG_DIR}"
 
-            # 원문 그대로 파일에 기록 (heredoc을 'EOF' 로 인용하면 변수확장/이스케이프 없음)
-            sudo bash -c "cat > '${CFG_FILE}' <<'EOF'
-$PROD_CONFIG
-EOF"
+            # 시크릿 원문을 그대로 파일에 씀(루트 권한으로 생성)
+            printf '%s\n' "$PROD_CONFIG" | sudo tee "${CFG_FILE}" >/dev/null
+
             sudo chown tomcat:tomcat "${CFG_FILE}"
             sudo chmod 600 "${CFG_FILE}"
             echo "[CI] Config.properties updated at ${CFG_FILE}"
