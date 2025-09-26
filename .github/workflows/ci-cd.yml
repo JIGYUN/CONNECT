@@ -13,7 +13,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # 저장소 내에서 pom.xml 이 있는 하위 디렉토리명 (루트면 빈 값으로 두고 아래 working-directory 제거)
+  # pom.xml 이 있는 하위 디렉토리명(루트면 아래 working-directory 제거)
   PROJECT_DIR: CONNECT
 
 jobs:
@@ -63,6 +63,36 @@ jobs:
           echo "war_basename=$(basename "$WAR")" >> $GITHUB_OUTPUT
           echo "Picked WAR: $WAR"
 
+      # --- 시크릿 존재 여부를 먼저 계산(여기서만 secrets 참조) ---
+      - name: Detect config secret
+        id: detect
+        shell: bash
+        run: |
+          if [ -n "${{ secrets.PROD_CONFIG }}" ]; then
+            echo "has_cfg=true"  >> $GITHUB_OUTPUT
+          else
+            echo "has_cfg=false" >> $GITHUB_OUTPUT
+          fi
+
+      # --- (선택) 시크릿으로 로컬 Config 파일 생성 ---
+      - name: Create local Config file
+        if: ${{ steps.detect.outputs.has_cfg == 'true' }}
+        shell: bash
+        run: |
+          set -e
+          printf '%s' "${{ secrets.PROD_CONFIG }}" > config-real.properties
+
+      # --- (선택) Config 를 서버 /tmp 로 복사 ---
+      - name: Copy Config to server (/tmp)
+        if: ${{ steps.detect.outputs.has_cfg == 'true' }}
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.PROD_HOST }}
+          username: ${{ secrets.PROD_USER }}
+          key: ${{ secrets.PROD_SSH_KEY }}
+          source: config-real.properties
+          target: /tmp/
+
       # --- WAR 파일을 서버 /tmp 로 업로드 ---
       - name: Copy WAR to server (/tmp)
         uses: appleboy/scp-action@v0.1.7
@@ -71,25 +101,6 @@ jobs:
           username: ${{ secrets.PROD_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
           source: ${{ steps.pick.outputs.war_file }}
-          target: /tmp/
-
-      # --- (선택) Secret에서 Config 생성해서 /tmp 로 업로드 ---
-      # PROD_CONFIG 시크릿이 "비어있지 않으면" 실행됩니다.
-      - name: Create local Config file from secret (optional)
-        if: ${{ secrets.PROD_CONFIG != '' }}
-        shell: bash
-        run: |
-          set -e
-          printf '%s' "${{ secrets.PROD_CONFIG }}" > config-real.properties
-
-      - name: Copy Config to server (/tmp) (optional)
-        if: ${{ secrets.PROD_CONFIG != '' }}
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.PROD_HOST }}
-          username: ${{ secrets.PROD_USER }}
-          key: ${{ secrets.PROD_SSH_KEY }}
-          source: config-real.properties
           target: /tmp/
 
       # --- 래퍼 스크립트 한 번만 sudo 로 호출 ---
@@ -110,7 +121,7 @@ jobs:
               sudo /usr/local/bin/deploy_tomcat.sh "$WAR"
             fi
 
-      # --- 헬스체크 (도메인 필수) ---
+      # --- 헬스체크 ---
       - name: Health check (HTTPS)
         env:
           DOMAIN: ${{ secrets.PROD_DOMAIN }}
