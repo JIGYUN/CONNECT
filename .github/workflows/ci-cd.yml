@@ -5,7 +5,6 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
-# 같은 브랜치에서 여러 배포가 겹치면 먼저 돌던 작업을 취소
 concurrency:
   group: cd-main
   cancel-in-progress: true
@@ -14,7 +13,7 @@ permissions:
   contents: read
 
 env:
-  PROJECT_DIR: CONNECT    # <-- pom.xml 이 있는 하위 폴더명
+  PROJECT_DIR: CONNECT   # pom.xml 이 있는 하위 폴더
 
 jobs:
   build:
@@ -30,7 +29,7 @@ jobs:
           java-version: '8'
           cache: maven
 
-      # 루트가 아니라 CONNECT 폴더의 pom.xml 을 빌드
+      # 하위폴더의 pom.xml 을 지정해서 빌드
       - name: Build (skip tests)
         run: mvn -B -DskipTests -f "${{ env.PROJECT_DIR }}/pom.xml" clean package
 
@@ -60,16 +59,21 @@ jobs:
           echo "war_file=$WAR" >> "$GITHUB_OUTPUT"
           echo "war_basename=$(basename "$WAR")" >> "$GITHUB_OUTPUT"
 
-      # (선택) 외부 Config.properties 를 비밀값으로 넣어 덮어쓰기 하고 싶을 때
-      # - GitHub Secret: PROD_CONFIG_B64  (Config.properties를 base64 로 인코딩해 저장)
-      # - GitHub Secret: PROD_CONFIG_TARGET  (/opt/tomcat/conf/Config.properties 와 같이 절대경로)
+      # ===== (옵션) Config.properties 배포 =====
+      # secrets를 if에서 직접 쓰지 않고 env로 전달 후, 쉘에서 빈값 검사
       - name: (opt) Prepare Config.properties
-        if: ${{ secrets.PROD_CONFIG_B64 != '' }}
+        env:
+          CONF_B64: ${{ secrets.PROD_CONFIG_B64 }}
         run: |
-          echo "${{ secrets.PROD_CONFIG_B64 }}" | base64 -d > Config.properties
+          if [ -z "${CONF_B64}" ]; then
+            echo "No PROD_CONFIG_B64 set -> skip creating Config.properties"
+            exit 0
+          fi
+          echo "${CONF_B64}" | base64 -d > Config.properties
+          ls -al Config.properties
 
       - name: (opt) Copy Config.properties to server
-        if: ${{ secrets.PROD_CONFIG_B64 != '' }}
+        if: ${{ hashFiles('Config.properties') != '' }}
         uses: appleboy/scp-action@v0.1.7
         with:
           host:     ${{ secrets.PROD_HOST }}
@@ -79,7 +83,7 @@ jobs:
           target:   /tmp/
 
       - name: (opt) Move Config.properties into place
-        if: ${{ secrets.PROD_CONFIG_B64 != '' }}
+        if: ${{ hashFiles('Config.properties') != '' }}
         uses: appleboy/ssh-action@v1.0.3
         with:
           host:     ${{ secrets.PROD_HOST }}
@@ -87,10 +91,16 @@ jobs:
           key:      ${{ secrets.PROD_SSH_KEY }}
           script: |
             set -e
-            sudo mkdir -p "$(dirname '${{ secrets.PROD_CONFIG_TARGET }}')"
-            sudo mv /tmp/Config.properties '${{ secrets.PROD_CONFIG_TARGET }}'
-            sudo chown tomcat:tomcat '${{ secrets.PROD_CONFIG_TARGET }}'
-            sudo chmod 600 '${{ secrets.PROD_CONFIG_TARGET }}'
+            TARGET="${{ secrets.PROD_CONFIG_TARGET }}"
+            if [ -z "${TARGET}" ]; then
+              echo "PROD_CONFIG_TARGET not set -> skip moving"
+              exit 0
+            fi
+            sudo mkdir -p "$(dirname "${TARGET}")"
+            sudo mv /tmp/Config.properties "${TARGET}"
+            sudo chown tomcat:tomcat "${TARGET}"
+            sudo chmod 600 "${TARGET}"
+      # ===== (옵션) 끝 =====
 
       - name: Copy WAR to server (/tmp)
         uses: appleboy/scp-action@v0.1.7
@@ -113,23 +123,25 @@ jobs:
             WEBAPPS="${{ secrets.PROD_TOMCAT_WEBAPPS }}"
             SERVICE="${{ secrets.PROD_TOMCAT_SERVICE }}"
 
-            # 이전 버전 백업 (선택)
             sudo mkdir -p "${WEBAPPS}/../releases"
             if [ -f "${WEBAPPS}/ROOT.war" ]; then
               TS=$(date +%Y%m%d%H%M%S)
               sudo cp -f "${WEBAPPS}/ROOT.war" "${WEBAPPS}/../releases/ROOT-${TS}.war" || true
             fi
 
-            # 안전 배포
             sudo systemctl stop "$SERVICE" || true
             sudo rm -rf "${WEBAPPS}/ROOT" "${WEBAPPS}/ROOT.war"
             sudo mv "/tmp/${WAR_NAME}" "${WEBAPPS}/ROOT.war"
             sudo chown tomcat:tomcat "${WEBAPPS}/ROOT.war"
             sudo systemctl start "$SERVICE"
 
-            # 포트가 떠오를 시간 대기(최대 30초)
+            # 8080 포트가 뜰 때까지 기다림(최대 30초)
             for i in {1..30}; do
-              sudo ss -ltnp | grep -q ":8080" && break || sleep 1
+              if sudo ss -ltnp | grep -q ":8080"; then
+                echo "Tomcat is listening on 8080"
+                break
+              fi
+              sleep 1
             done
             sudo systemctl --no-pager status "$SERVICE" || true
 
