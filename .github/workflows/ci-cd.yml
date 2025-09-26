@@ -1,4 +1,4 @@
-name: CI-CD (Build & Deploy to Tomcat - B plan)
+name: CI-CD (Build & Deploy to Tomcat - patch WAR with Config.properties)
 
 on:
   push:
@@ -9,11 +9,7 @@ permissions:
   contents: read
 
 env:
-  PROJECT_DIR: CONNECT
-
-concurrency:
-  group: cd-main
-  cancel-in-progress: true
+  PROJECT_DIR: CONNECT            # pom.xml 있는 하위 폴더명 (루트면 빈값으로)
 
 jobs:
   build:
@@ -33,11 +29,43 @@ jobs:
         working-directory: ${{ env.PROJECT_DIR }}
         run: mvn -B -DskipTests clean package
 
-      - name: Upload WAR artifact
+      # ───────────────────────────────────────────────
+      # ① WAR 안에 Config.properties를 주입(패치)
+      #    → CoreProperties가 classpath:/config/Config.properties 를 읽으므로
+      #      WAR 내부 경로는 WEB-INF/classes/config/Config.properties 이어야 함
+      # ───────────────────────────────────────────────
+      - name: Patch WAR with Config.properties from secret
+        working-directory: ${{ env.PROJECT_DIR }}/target
+        run: |
+          set -e
+          WAR_ORIG=$(ls *.war | head -n1)
+          echo "ORIG WAR: ${WAR_ORIG}"
+
+          mkdir -p warwork
+          cd warwork
+
+          # WAR 풀기
+          jar xf "../${WAR_ORIG}"
+
+          # 목적 경로 만들고 시크릿 값으로 파일 생성
+          mkdir -p WEB-INF/classes/config
+          printf '%s\n' "${{ secrets.PROD_CONFIG }}" > WEB-INF/classes/config/Config.properties
+
+          # 패치된 WAR 만들기
+          WAR_PATCHED="../${WAR_ORIG%.war}-patched.war"
+          jar cf "${WAR_PATCHED}" .
+
+          # 검증 (Config.properties 들어갔는지)
+          echo "Verify entries:"
+          jar tf "${WAR_PATCHED}" | grep -i 'WEB-INF/classes/config/Config.properties' || (echo "Config not in WAR!" && exit 1)
+
+          echo "PATCHED WAR: ${WAR_PATCHED}"
+
+      - name: Upload patched WAR
         uses: actions/upload-artifact@v4
         with:
           name: app-war
-          path: ${{ env.PROJECT_DIR }}/target/*.war
+          path: ${{ env.PROJECT_DIR }}/target/*-patched.war
 
   deploy:
     needs: build
@@ -51,11 +79,10 @@ jobs:
 
       - name: Pick artifact
         id: pick
-        shell: bash
         run: |
-          WAR=$(ls *.war | head -n1)
-          echo "war_file=$WAR" >> "$GITHUB_OUTPUT"
-          echo "war_basename=$(basename "$WAR")" >> "$GITHUB_OUTPUT"
+          WAR=$(ls *-patched.war | head -n1)
+          echo "war_file=$WAR" >> $GITHUB_OUTPUT
+          echo "war_basename=$(basename "$WAR")" >> $GITHUB_OUTPUT
 
       - name: Copy WAR to server (/tmp)
         uses: appleboy/scp-action@v0.1.7
@@ -66,45 +93,49 @@ jobs:
           source: ${{ steps.pick.outputs.war_file }}
           target: /tmp/
 
-      # ▼ 여기서 'if: secrets...' 를 쓰지 않고, 쉘에서 분기합니다.
-      - name: Put Config.properties to /tmp (optional)
+      # ───────────────────────────────────────────────
+      # ② 서버에서 WAR 폭파 배포 (webapps에는 디렉터리만 남김)
+      # ───────────────────────────────────────────────
+      - name: Deploy exploded directory (no ROOT.war)
         uses: appleboy/ssh-action@v1.0.3
-        env:
-          PROD_CONFIG: ${{ secrets.PROD_CONFIG }}   # 시크릿이 없으면 빈 값
         with:
           host: ${{ secrets.PROD_HOST }}
           username: ${{ secrets.PROD_USER }}
           key: ${{ secrets.PROD_SSH_KEY }}
-          # ssh-action이 원격에 넘겨줄 환경변수 키를 지정
-          envs: PROD_CONFIG
           script: |
-            set -e
-            if [ -n "$PROD_CONFIG" ]; then
-              echo "[CI] Writing /tmp/ci-config.properties"
-              printf '%s\n' "$PROD_CONFIG" > /tmp/ci-config.properties
-              chmod 600 /tmp/ci-config.properties
-            else
-              echo "[CI] PROD_CONFIG secret not present. Skipping config file."
-            fi
+            set -euo pipefail
 
-      - name: Deploy via wrapper (with optional config)
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.PROD_HOST }}
-          username: ${{ secrets.PROD_USER }}
-          key: ${{ secrets.PROD_SSH_KEY }}
-          script: |
-            set -e
-            WAR="/tmp/${{ steps.pick.outputs.war_basename }}"
-            CFG="/tmp/ci-config.properties"
-            if [ -f "$CFG" ]; then
-              sudo /usr/local/bin/deploy_tomcat.sh "$WAR" "$CFG"
-            else
-              sudo /usr/local/bin/deploy_tomcat.sh "$WAR"
-            fi
+            WEBAPPS="/opt/tomcat/webapps"
+            SERVICE="tomcat"
+            WAR_NAME="${{ steps.pick.outputs.war_basename }}"
+            WAR_SRC="/tmp/${WAR_NAME}"
+            ROOT_DIR="${WEBAPPS}/ROOT"
+            ROOT_WAR="${WEBAPPS}/ROOT.war"
+
+            echo "[DEPLOY] stop tomcat"
+            sudo systemctl stop "${SERVICE}" || true
+
+            echo "[DEPLOY] clean ROOT & ROOT.war"
+            sudo rm -rf "${ROOT_DIR}" "${ROOT_WAR}"
+
+            echo "[DEPLOY] unzip to ${ROOT_DIR}"
+            sudo mkdir -p "${ROOT_DIR}"
+            sudo unzip -q -o "${WAR_SRC}" -d "${ROOT_DIR}"
+
+            # (선택) 여기서도 다시 한 번 확인
+            echo "[DEPLOY] check Config.properties present"
+            sudo bash -c 'ls -l "${0}" "${1}" 2>/dev/null || true' "${ROOT_DIR}/WEB-INF/classes/config/Config.properties" "${ROOT_DIR}/WEB-INF/classes/Config.properties"
+            sudo bash -c 'grep -n "^[^#].*" -m 5 "${0}" 2>/dev/null || true' "${ROOT_DIR}/WEB-INF/classes/config/Config.properties"
+
+            echo "[DEPLOY] chown"
+            sudo chown -R tomcat:tomcat "${ROOT_DIR}"
+
+            echo "[DEPLOY] start tomcat"
+            sudo systemctl start "${SERVICE}"
+            sleep 5
+            sudo systemctl --no-pager status "${SERVICE}" || true
 
       - name: Health check (HTTPS)
-        shell: bash
         run: |
           url="https://${{ secrets.PROD_DOMAIN }}/"
           for i in {1..30}; do
